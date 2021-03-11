@@ -6,4 +6,4 @@
 
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-console.log(6667);
+console.log(6+6);
