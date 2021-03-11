@@ -1,9 +1,11 @@
 // @ts-check
 
-import Example from './Example.js';
+import 'bootstrap/dist/css/bootstrap.min.css';
+
 
 export default () => {
-  const element = document.getElementById('point');
-  const obj = new Example(element);
-  obj.init();
+  const elements = {
+    form: document.querySelector('[data-rss-form]')
+  }
+  console.log(elements.form);
 };

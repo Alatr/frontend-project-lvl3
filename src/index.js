@@ -1,9 +1,5 @@
-// @ts-check
+import init from './init.js';
 
-// import init from './init.js';
+init();
 
-// init();
 
-import 'bootstrap/dist/css/bootstrap.min.css';
-
-console.log('ehy');
