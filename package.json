@@ -21,6 +21,7 @@
   },
   "main": "src/init.js",
   "dependencies": {
+    "axios": "^0.21.1",
     "bootstrap": "^4.6.0",
     "jquery": "^3.6.0",
     "on-change": "^2.2.3",
