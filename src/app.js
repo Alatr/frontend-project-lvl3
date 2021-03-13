@@ -1,6 +1,6 @@
-import 'bootstrap/dist/css/bootstrap.min.css';
 import * as yup from 'yup';
 import axios from 'axios';
+import _ from 'lodash';
 import initView from './view.js';
 
 function isValid(url) {
@@ -22,8 +22,22 @@ const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?url=${enc
 const parseXML = (xml) => {
   const parser = new DOMParser();
   const newDocument = parser.parseFromString(xml, 'application/xml');
-  console.log(newDocument);
-
+  const ID = _.uniqueId('feed');
+  const posts = [...newDocument.querySelectorAll('channel > item')].map((post) => ({
+    feed: ID,
+    postId: _.uniqueId('post'),
+    title: post.querySelector('title').textContent,
+    description: post.querySelector('description').textContent,
+    link: post.querySelector('link').textContent,
+  }));
+  return {
+    feed: {
+      feedId: ID,
+      title: newDocument.querySelector('channel > title').textContent,
+      description: newDocument.querySelector('channel > description').textContent,
+    },
+    posts,
+  };
 };
 
 export default () => {
@@ -39,7 +53,8 @@ export default () => {
 
   const state = {
     rss: {
-      list: null,
+      feedsList: [],
+      postsList: [],
       processState: 'filling',
       errors: null,
 
@@ -60,15 +75,16 @@ export default () => {
     e.preventDefault();
 
     const formData = new FormData(e.target);
-    const error = isValid(formData.get('url'));
-    if (error) {
+    const validationError = isValid(formData.get('url'));
+    if (validationError) {
       watchedState.form.valid = false;
-      watchedState.form.errors = error;
+      watchedState.form.errors = validationError;
       watchedState.form.processState = 'error';
       return;
     }
+
     watchedState.form.valid = true;
-    watchedState.form.errors = error;
+    watchedState.form.errors = validationError;
     watchedState.form.fields.url = formData.get('url');
     watchedState.form.processState = 'validUrl';
 
@@ -80,13 +96,16 @@ export default () => {
         if (!isValidRSS(response.data.contents)) throw new Error('invalidRSS');
 
         watchedState.rss.errors = null;
-        watchedState.rss.processState = 'filling';
+        watchedState.rss.processState = 'success';
 
-        const data = parseXML(response.data.contents);
+        const { feed, posts } = parseXML(response.data.contents);
+        watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
+        watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
       })
 
       .catch((error) => {
         if (!!error.isAxiosError && !error.response) {
+          console.log(error);
           watchedState.form.processState = 'networkFiled';
           return;
         }
@@ -96,6 +115,7 @@ export default () => {
           return;
         }
         watchedState.form.processState = 'filed';
+        throw new Error(error);
       });
   });
 };
