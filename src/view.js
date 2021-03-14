@@ -40,6 +40,8 @@ const renderRssValidation = (rss, elements) => {
       DOMElements.submitBtn.removeAttribute('disabled');
       DOMElements.formInput.removeAttribute('disabled');
       break;
+    case 'filling':
+      break;
     case 'success':
       DOMElements.formInput.value = '';
       DOMElements.formInput.focus();

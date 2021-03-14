@@ -89,7 +89,6 @@ export default () => {
     watchedState.form.processState = 'validUrl';
 
     watchedState.form.processState = 'sanding';
-
     axios.get(addProxy(watchedState.form.fields.url))
       .then((response) => {
         watchedState.form.processState = 'filling';
@@ -97,6 +96,7 @@ export default () => {
 
         watchedState.rss.errors = null;
         watchedState.rss.processState = 'success';
+        watchedState.rss.processState = 'filling';
 
         const { feed, posts } = parseXML(response.data.contents);
         watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
@@ -105,7 +105,6 @@ export default () => {
 
       .catch((error) => {
         if (!!error.isAxiosError && !error.response) {
-          console.log(error);
           watchedState.form.processState = 'networkFiled';
           return;
         }
