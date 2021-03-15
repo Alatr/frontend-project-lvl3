@@ -42,6 +42,23 @@ const parseXML = (xml) => {
   };
 };
 
+function subscribe(url) {
+  console.log(url);
+  // const response = axios.get(addProxy(url))
+  //   .then((response) => {
+  //     console.log(response);
+  //     return new Promise((resolve) => setTimeout(resolve, 3000));
+  //   })
+  //   .then((e) => {
+  //     subscribe(url);
+  //     console.log(e, 5);
+  //   })
+
+  //   .catch((error) => {
+
+  //   });
+}
+
 export default () => {
   i18next.init({
     lng: 'ru',
@@ -114,6 +131,8 @@ export default () => {
           const { feed, posts } = parseXML(response.data.contents);
           watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
           watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
+
+          subscribe(watchedState.form.fields.url);
         })
 
         .catch((error) => {
