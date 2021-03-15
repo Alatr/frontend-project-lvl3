@@ -11,9 +11,20 @@ import run from '../src/app';
 
 const getFixturePath = (filename) => path.resolve('__tests__', '__fixtures__', filename);
 const readFile = (filename) => fs.readFileSync(getFixturePath(filename), 'utf-8');
+
 const elements = {};
 const dataRss1 = readFile('data-rss-1.txt').toString().trim();
 const dataRss2 = readFile('data-rss-2.txt').toString().trim();
+const defaultReplyHeaders = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-credentials': 'true',
+};
+const url = {
+  mainLinkProxy: 'https://hexlet-allorigins.herokuapp.com',
+  rssLink1: 'https://ru.hexlet.io/lessons.rss',
+  rssLink2: 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1',
+  rssLinkWrong: 'https://ru.hexlet.io/lessons.wrong',
+};
 
 beforeAll(() => {
   nock.disableNetConnect();
@@ -59,21 +70,18 @@ describe('app', () => {
     expect(elements.feedbackMessageBlock).toHaveTextContent('Ссылка должна быть валидным URL');
 
     await userEvent.clear(elements.formInput);
-    await userEvent.type(elements.formInput, 'https://ru.hexlet.io/lessons.rss');
+    await userEvent.type(elements.formInput, url.rssLink1);
 
-    const scope = nock('https://hexlet-allorigins.herokuapp.com')
-      .defaultReplyHeaders({
-        'access-control-allow-origin': '*',
-        'access-control-allow-credentials': 'true',
-      })
+    const scope = nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
-      .query({ url: 'https://ru.hexlet.io/lessons.rss' })
+      .query({ url: url.rssLink1 })
       .reply(200, dataRss1)
       .get('/get')
-      .query({ url: 'https://ru.hexlet.io/lessons.wrong' })
+      .query({ url: url.rssLinkWrong })
       .reply(200, 'wronge-response')
       .get('/get')
-      .query({ url: 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1' })
+      .query({ url: url.rssLink2 })
       .reply(200, dataRss2);
 
     userEvent.click(elements.submitBtn);
@@ -102,12 +110,12 @@ describe('app', () => {
       expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
     });
 
-    await userEvent.type(elements.formInput, 'https://ru.hexlet.io/lessons.wrong');
+    await userEvent.type(elements.formInput, url.rssLinkWrong);
     userEvent.click(elements.submitBtn);
 
     await waitFor(() => {
       expect(elements.formInput).toBeRequired();
-      expect(elements.formInput).toHaveValue('https://ru.hexlet.io/lessons.wrong');
+      expect(elements.formInput).toHaveValue(url.rssLinkWrong);
       expect(elements.formInput).toBeEnabled();
       expect(elements.formInput).not.toHaveClass('is-invalid');
 
@@ -129,7 +137,7 @@ describe('app', () => {
     });
 
     await userEvent.clear(elements.formInput);
-    await userEvent.type(elements.formInput, 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1');
+    await userEvent.type(elements.formInput, url.rssLink2);
     userEvent.click(elements.submitBtn);
 
     await waitFor(() => {
@@ -162,21 +170,18 @@ describe('app', () => {
   });
 
   test('add invalid rss', async () => {
-    const scope = nock('https://hexlet-allorigins.herokuapp.com')
-      .defaultReplyHeaders({
-        'access-control-allow-origin': '*',
-        'access-control-allow-credentials': 'true',
-      })
+    const scope = nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
-      .query({ url: 'https://ru.hexlet.io/lessons.wrong' })
+      .query({ url: url.rssLinkWrong })
       .reply(200, 'wronge-response');
 
-    await userEvent.type(elements.formInput, 'https://ru.hexlet.io/lessons.wrong');
+    await userEvent.type(elements.formInput, url.rssLinkWrong);
     userEvent.click(elements.submitBtn);
 
     await waitFor(() => {
       expect(elements.formInput).toBeRequired();
-      expect(elements.formInput).toHaveValue('https://ru.hexlet.io/lessons.wrong');
+      expect(elements.formInput).toHaveValue(url.rssLinkWrong);
       expect(elements.formInput).toBeEnabled();
       expect(elements.formInput).not.toHaveClass('is-invalid');
 
@@ -195,16 +200,13 @@ describe('app', () => {
   });
 
   test('add one valid rss', async () => {
-    const scope = nock('https://hexlet-allorigins.herokuapp.com')
-      .defaultReplyHeaders({
-        'access-control-allow-origin': '*',
-        'access-control-allow-credentials': 'true',
-      })
+    const scope = nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
-      .query({ url: 'https://ru.hexlet.io/lessons.rss' })
+      .query({ url: url.rssLink1 })
       .reply(200, dataRss1);
 
-    await userEvent.type(elements.formInput, 'https://ru.hexlet.io/lessons.rss');
+    await userEvent.type(elements.formInput, url.rssLink1);
 
     userEvent.click(elements.submitBtn);
 
@@ -235,18 +237,15 @@ describe('app', () => {
   });
 
   test('add two valid rss', async () => {
-    await userEvent.type(elements.formInput, 'https://ru.hexlet.io/lessons.rss');
+    await userEvent.type(elements.formInput, url.rssLink1);
 
-    const scope = nock('https://hexlet-allorigins.herokuapp.com')
-      .defaultReplyHeaders({
-        'access-control-allow-origin': '*',
-        'access-control-allow-credentials': 'true',
-      })
+    const scope = nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
-      .query({ url: 'https://ru.hexlet.io/lessons.rss' })
+      .query({ url: url.rssLink1 })
       .reply(200, dataRss1)
       .get('/get')
-      .query({ url: 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1' })
+      .query({ url: url.rssLink2 })
       .reply(200, dataRss2);
 
     userEvent.click(elements.submitBtn);
@@ -275,7 +274,7 @@ describe('app', () => {
       expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
     });
 
-    await userEvent.type(elements.formInput, 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1');
+    await userEvent.type(elements.formInput, url.rssLink2);
     userEvent.click(elements.submitBtn);
 
     await waitFor(() => {
