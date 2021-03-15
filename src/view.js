@@ -1,4 +1,5 @@
 import onChange from 'on-change';
+import i18next from 'i18next';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const renderRssPosts = (rss, elements) => {
@@ -7,12 +8,12 @@ const renderRssPosts = (rss, elements) => {
     .map(({ title, postId, link }) => (
       `<li class="list-group-item d-flex justify-content-between align-items-start">
         <a href="${link}" class="font-weight-bold" data-id="${postId}" target="_blank" rel="noopener noreferrer">${title}</a>
-        <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-toggle="modal" data-target="#modal">Просмотр</button>
+        <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-toggle="modal" data-target="#modal">${i18next.t('viewButtonModal')}</button>
       </li>`
     ))
     .join('\n');
   list.innerHTML = `
-    <h2>Посты</h2>
+    <h2>${i18next.t('titlePost')}</h2>
     <ul class="list-group">
       ${postItems}
     </ul>`;
@@ -25,7 +26,7 @@ const renderRssFeeds = (rss, elements) => {
     .join('\n');
 
   list.innerHTML = `
-    <h2>Фиды</h2>
+    <h2>${i18next.t('titleFeed')}</h2>
     <ul class="list-group mb-5">
         ${feedsItems}
     </ul>`;
@@ -46,7 +47,7 @@ const renderRssValidation = (rss, elements) => {
       DOMElements.formInput.value = '';
       DOMElements.formInput.focus();
       DOMElements.feedbackMessageBlock.classList.add('text-success');
-      DOMElements.feedbackMessageBlock.textContent = 'RSS успешно загружен';
+      DOMElements.feedbackMessageBlock.textContent = i18next.t('successLoadValidation');
       break;
     default:
       throw Error(`Unknown rss processState: ${rss.processState}`);
@@ -77,13 +78,13 @@ const renderFormValidation = (form, elements) => {
       elements.formInput.removeAttribute('disabled');
       break;
     case 'filed':
-      DOMElements.feedbackMessageBlock.textContent = 'Неизвестная ошибка';
+      DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.unknownError');
       elements.feedbackMessageBlock.classList.add('text-danger');
       elements.submitBtn.removeAttribute('disabled');
       elements.formInput.removeAttribute('disabled');
       break;
     case 'networkFiled':
-      DOMElements.feedbackMessageBlock.textContent = 'Ошибка сети';
+      DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
       elements.feedbackMessageBlock.classList.add('text-danger');
       elements.submitBtn.removeAttribute('disabled');
       elements.formInput.removeAttribute('disabled');
