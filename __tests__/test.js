@@ -30,10 +30,10 @@ beforeAll(() => {
   nock.disableNetConnect();
 });
 
-beforeEach(() => {
+beforeEach(async () => {
   const initHtml = readFile('index.html').toString().trim();
   document.body.innerHTML = initHtml;
-  run();
+  await run();
 
   elements.formInput = screen.getByPlaceholderText('ссылка RSS');
   elements.submitBtn = screen.getByText(/Add/i);
@@ -72,7 +72,8 @@ describe('app', () => {
     await userEvent.clear(elements.formInput);
     await userEvent.type(elements.formInput, url.rssLink1);
 
-    const scope = nock(url.mainLinkProxy)
+    nock(url.mainLinkProxy)
+      .persist()
       .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
       .query({ url: url.rssLink1 })
@@ -166,11 +167,11 @@ describe('app', () => {
       expect(elements.feedbackMessageBlock).toHaveClass('text-success');
       expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
     });
-    scope.done();
   });
 
   test('add invalid rss', async () => {
-    const scope = nock(url.mainLinkProxy)
+    nock(url.mainLinkProxy)
+      .persist()
       .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
       .query({ url: url.rssLinkWrong })
@@ -195,12 +196,11 @@ describe('app', () => {
       expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
       expect(elements.feedbackMessageBlock).toHaveTextContent('Ресурс не содержит валидный RSS');
     });
-
-    scope.done();
   });
 
   test('add one valid rss', async () => {
-    const scope = nock(url.mainLinkProxy)
+    nock(url.mainLinkProxy)
+      .persist()
       .defaultReplyHeaders(defaultReplyHeaders)
       .get('/get')
       .query({ url: url.rssLink1 })
@@ -233,14 +233,76 @@ describe('app', () => {
       expect(elements.feedbackMessageBlock).toHaveClass('text-success');
       expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
     });
-    scope.done();
   });
 
+  test('add two already exists rss', async () => {
+    await userEvent.type(elements.formInput, url.rssLink1);
+
+    nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
+      .persist()
+      .get('/get')
+      .query({ url: url.rssLink1 })
+      .reply(200, dataRss1);
+
+    userEvent.click(elements.submitBtn);
+
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveFocus();
+      expect(elements.formInput).not.toHaveValue();
+      expect(elements.formInput).toBeEnabled();
+      expect(elements.formInput).not.toHaveClass('is-invalid');
+
+      expect(elements.submitBtn).toBeEnabled();
+
+      expect(elements.feedsList).not.toBeEmptyDOMElement();
+      expect(elements.postsList).not.toBeEmptyDOMElement();
+      expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
+      expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
+      expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
+      expect(screen.getByText(/Посты/i)).toBeInTheDocument();
+      expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
+      expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+
+      expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
+      expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
+      expect(elements.feedbackMessageBlock).toHaveClass('text-success');
+      expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
+    });
+
+    await userEvent.type(elements.formInput, url.rssLink1);
+    userEvent.click(elements.submitBtn);
+
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveValue(url.rssLink1);
+      expect(elements.formInput).toBeEnabled();
+      expect(elements.formInput).toHaveClass('is-invalid');
+
+      expect(elements.submitBtn).toBeEnabled();
+
+      expect(elements.feedsList).not.toBeEmptyDOMElement();
+      expect(elements.postsList).not.toBeEmptyDOMElement();
+      expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
+      expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
+      expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
+      expect(screen.getByText(/Посты/i)).toBeInTheDocument();
+      expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
+      expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+
+      expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
+      expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
+      expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
+      expect(elements.feedbackMessageBlock).toHaveTextContent('RSS уже существует');
+    });
+  });
   test('add two valid rss', async () => {
     await userEvent.type(elements.formInput, url.rssLink1);
 
-    const scope = nock(url.mainLinkProxy)
+    nock(url.mainLinkProxy)
       .defaultReplyHeaders(defaultReplyHeaders)
+      .persist()
       .get('/get')
       .query({ url: url.rssLink1 })
       .reply(200, dataRss1)
@@ -303,7 +365,6 @@ describe('app', () => {
       expect(elements.feedbackMessageBlock).toHaveClass('text-success');
       expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
     });
-    scope.done();
   });
 
   test('invalid link', async () => {

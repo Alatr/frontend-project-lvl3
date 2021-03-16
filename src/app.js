@@ -43,28 +43,27 @@ const parseXML = (xml) => {
 };
 
 function subscribe(rssState) {
-  const promises = Object.values(rssState.subscribedUrls).map((url) => axios.get(addProxy(url))
+  const state = rssState;
+  const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
     .then((response) => ({ status: 'success', xml: response.data.contents }))
     .catch((error) => ({ status: 'error', error })));
-    
+
   return Promise.all(promises)
-    .then((response) => {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(response);
-        }, 3000);
-      });
-    })
+    .then((response) => new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(response);
+      }, 3000);
+    }))
     .then((response) => {
       const newPosts = response
         .filter(({ status }) => status === 'success')
         .flatMap(({ xml }) => parseXML(xml).posts)
-        .filter(({ title }) => rssState.postsList.findIndex((post) => post.title === title) === -1);
-      
-      if (newPosts.length !== 0){
-        rssState.postsList = [...newPosts, ...rssState.postsList];
+        .filter(({ title }) => state.postsList.findIndex((post) => post.title === title) === -1);
+
+      if (newPosts.length !== 0) {
+        state.postsList = [...newPosts, ...state.postsList];
       }
-      subscribe(rssState);
+      subscribe(state);
     })
     .catch((error) => {
       throw new Error(error);
@@ -76,104 +75,106 @@ export default () => {
     lng: 'ru',
     debug: true,
     resources,
-  }).then(() => {
-    yup.setLocale({
-      string: {
-        url: i18next.t('errorMessages.url'),
-      },
-    });
-
-    const elements = {
-      form: document.querySelector('[data-rss-form]'),
-      formInput: document.querySelector('[data-rss-form] [data-rss-input]'),
-      submitBtn: document.querySelector('[data-rss-form] [data-submit-button]'),
-      formSubmitButton: document.querySelector('[data-rss-form] [data-rss-input]'),
-      feedsList: document.querySelector('[data-feeds-list]'),
-      postsList: document.querySelector('[data-posts-list]'),
-      feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
-    };
-
-    const state = {
-      rss: {
-        feedsList: [],
-        postsList: [],
-        processState: 'filling',
-        errors: null,
-        subscribedUrls: [],
-      },
-      form: {
-        processState: 'filling',
-        processError: null,
-        fields: {
-          url: null,
+  })
+    .then(() => {
+      yup.setLocale({
+        string: {
+          url: i18next.t('errorMessages.url'),
         },
-        valid: true,
-        errors: null,
-      },
-    };
-    const watchedState = initView(elements, state);
+      });
 
-    elements.form.addEventListener('submit', (e) => {
-      e.preventDefault();
+      const elements = {
+        form: document.querySelector('[data-rss-form]'),
+        formInput: document.querySelector('[data-rss-form] [data-rss-input]'),
+        submitBtn: document.querySelector('[data-rss-form] [data-submit-button]'),
+        formSubmitButton: document.querySelector('[data-rss-form] [data-rss-input]'),
+        feedsList: document.querySelector('[data-feeds-list]'),
+        postsList: document.querySelector('[data-posts-list]'),
+        feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
+      };
 
-      const formData = new FormData(e.target);
-      const validationError = isValid(formData.get('url'));
-      if (validationError) {
-        watchedState.form.valid = false;
+      const state = {
+        rss: {
+          feedsList: [],
+          postsList: [],
+          processState: 'filling',
+          errors: null,
+          subscribedUrls: [],
+        },
+        form: {
+          processState: 'filling',
+          processError: null,
+          fields: {
+            url: null,
+          },
+          valid: true,
+          errors: null,
+        },
+      };
+      const watchedState = initView(elements, state);
+
+      elements.form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(e.target);
+        const validationError = isValid(formData.get('url'));
+        if (validationError) {
+          watchedState.form.valid = false;
+          watchedState.form.errors = validationError;
+          watchedState.form.processState = 'error';
+          return;
+        }
+
+        watchedState.form.valid = true;
         watchedState.form.errors = validationError;
-        watchedState.form.processState = 'error';
-        return;
-      }
+        watchedState.form.processState = 'validUrl';
 
-      watchedState.form.valid = true;
-      watchedState.form.errors = validationError;
-      watchedState.form.processState = 'validUrl';
-
-      if(watchedState.rss.subscribedUrls.includes(formData.get('url'))){
-        watchedState.rss.errors = null;
-        watchedState.rss.errors = i18next.t('errorMessages.alreadyExists');
-        watchedState.rss.processState = 'subscribeError';
-        watchedState.rss.processState = 'filling';
-        return;
-      }
-
-      watchedState.form.processState = 'sanding';
-      axios.get(addProxy(formData.get('url')))
-        .then((response) => {
-          watchedState.form.processState = 'filling';
-          if (!isValidRSS(response.data.contents)) throw new Error('invalidRSS');
-          
+        if (watchedState.rss.subscribedUrls.includes(formData.get('url'))) {
           watchedState.rss.errors = null;
-          watchedState.rss.processState = 'success';
+          watchedState.rss.errors = i18next.t('errorMessages.alreadyExists');
+          watchedState.rss.processState = 'subscribeError';
           watchedState.rss.processState = 'filling';
-          
-          const { feed, posts } = parseXML(response.data.contents);
-          watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
-          watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
+          return;
+        }
 
-          watchedState.rss.subscribedUrls = [...watchedState.rss.subscribedUrls, formData.get('url')];
+        watchedState.form.processState = 'sanding';
+        axios.get(addProxy(formData.get('url')))
+          .then((response) => {
+            watchedState.form.processState = 'filling';
+            if (!isValidRSS(response.data.contents)) throw new Error('invalidRSS');
 
-          return new Promise((resolve) => {
-            if (watchedState.rss.subscribedUrls.length === 1) resolve(watchedState.rss);
+            watchedState.rss.errors = null;
+            watchedState.rss.processState = 'success';
+            watchedState.rss.processState = 'filling';
+
+            const { feed, posts } = parseXML(response.data.contents);
+            watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
+            watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
+
+            watchedState.rss.subscribedUrls = [...watchedState.rss.subscribedUrls, formData.get('url')];
+
+            return new Promise((resolve) => {
+              if (watchedState.rss.subscribedUrls.length === 1) resolve(watchedState.rss);
+            });
+          })
+          .then((rssState) => subscribe(rssState))
+
+          .catch((error) => {
+            if (!!error.isAxiosError && !error.response) {
+              watchedState.form.processState = 'networkFiled';
+              return;
+            }
+            if (error.message === 'invalidRSS') {
+              watchedState.rss.errors = i18next.t('errorMessages.invalidRss');
+              watchedState.rss.processState = 'invalid';
+              return;
+            }
+            watchedState.form.processState = 'filed';
+            throw new Error(error);
           });
-        })
-        .then((state) => {
-            return subscribe(state);
-        })
-
-        .catch((error) => {
-          if (!!error.isAxiosError && !error.response) {
-            watchedState.form.processState = 'networkFiled';
-            return;
-          }
-          if (error.message === 'invalidRSS') {
-            watchedState.rss.errors = i18next.t('errorMessages.invalidRss');
-            watchedState.rss.processState = 'invalid';
-            return;
-          }
-          watchedState.form.processState = 'filed';
-          throw new Error(error);
-        });
+      });
+    })
+    .catch((error) => {
+      throw new Error(error);
     });
-  });
 };
