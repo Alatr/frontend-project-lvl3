@@ -41,6 +41,12 @@ const renderRssValidation = (rss, elements) => {
       DOMElements.submitBtn.removeAttribute('disabled');
       DOMElements.formInput.removeAttribute('disabled');
       break;
+    case 'subscribeError':
+      DOMElements.feedbackMessageBlock.classList.add('text-danger');
+      DOMElements.feedbackMessageBlock.textContent = rss.errors;
+      elements.formInput.classList.add('is-invalid');
+
+      break;
     case 'filling':
       break;
     case 'success':

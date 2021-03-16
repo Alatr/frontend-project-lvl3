@@ -42,21 +42,33 @@ const parseXML = (xml) => {
   };
 };
 
-function subscribe(url) {
-  console.log(url);
-  // const response = axios.get(addProxy(url))
-  //   .then((response) => {
-  //     console.log(response);
-  //     return new Promise((resolve) => setTimeout(resolve, 3000));
-  //   })
-  //   .then((e) => {
-  //     subscribe(url);
-  //     console.log(e, 5);
-  //   })
-
-  //   .catch((error) => {
-
-  //   });
+function subscribe(rssState) {
+  const promises = Object.values(rssState.subscribedUrls).map((url) => axios.get(addProxy(url))
+    .then((response) => ({ status: 'success', xml: response.data.contents }))
+    .catch((error) => ({ status: 'error', error })));
+    
+  return Promise.all(promises)
+    .then((response) => {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(response);
+        }, 3000);
+      });
+    })
+    .then((response) => {
+      const newPosts = response
+        .filter(({ status }) => status === 'success')
+        .flatMap(({ xml }) => parseXML(xml).posts)
+        .filter(({ title }) => rssState.postsList.findIndex((post) => post.title === title) === -1);
+      
+      if (newPosts.length !== 0){
+        rssState.postsList = [...newPosts, ...rssState.postsList];
+      }
+      subscribe(rssState);
+    })
+    .catch((error) => {
+      throw new Error(error);
+    });
 }
 
 export default () => {
@@ -87,7 +99,7 @@ export default () => {
         postsList: [],
         processState: 'filling',
         errors: null,
-
+        subscribedUrls: [],
       },
       form: {
         processState: 'filling',
@@ -115,24 +127,38 @@ export default () => {
 
       watchedState.form.valid = true;
       watchedState.form.errors = validationError;
-      watchedState.form.fields.url = formData.get('url');
       watchedState.form.processState = 'validUrl';
 
+      if(watchedState.rss.subscribedUrls.includes(formData.get('url'))){
+        watchedState.rss.errors = null;
+        watchedState.rss.errors = i18next.t('errorMessages.alreadyExists');
+        watchedState.rss.processState = 'subscribeError';
+        watchedState.rss.processState = 'filling';
+        return;
+      }
+
       watchedState.form.processState = 'sanding';
-      axios.get(addProxy(watchedState.form.fields.url))
+      axios.get(addProxy(formData.get('url')))
         .then((response) => {
           watchedState.form.processState = 'filling';
           if (!isValidRSS(response.data.contents)) throw new Error('invalidRSS');
-
+          
           watchedState.rss.errors = null;
           watchedState.rss.processState = 'success';
           watchedState.rss.processState = 'filling';
-
+          
           const { feed, posts } = parseXML(response.data.contents);
           watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
           watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
 
-          subscribe(watchedState.form.fields.url);
+          watchedState.rss.subscribedUrls = [...watchedState.rss.subscribedUrls, formData.get('url')];
+
+          return new Promise((resolve) => {
+            if (watchedState.rss.subscribedUrls.length === 1) resolve(watchedState.rss);
+          });
+        })
+        .then((state) => {
+            return subscribe(state);
         })
 
         .catch((error) => {

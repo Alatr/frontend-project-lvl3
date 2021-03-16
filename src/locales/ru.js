@@ -5,6 +5,7 @@ export default {
       invalidRss: 'Ресурс не содержит валидный RSS',
       network: 'Ошибка сети',
       unknownError: 'Неизвестная ошибка',
+      alreadyExists: 'RSS уже существует',
     },
     successLoadValidation: 'RSS успешно загружен',
     titleFeed: 'Фиды',
