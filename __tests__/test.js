@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import fs from 'fs';
 import path from 'path';
 import {
-  screen, waitFor,
+  screen, waitFor, getByText,
 } from '@testing-library/dom';
 import userEvent from '@testing-library/user-event';
 import nock from 'nock';
@@ -41,55 +41,29 @@ beforeEach(async () => {
   elements.postsList = screen.getByTestId('posts');
   elements.feedbackMessageBlock = screen.getByTestId('feedback');
   elements.modal = screen.getByTestId('modal');
-  elements.modalTitle = screen.getByTestId('modal-title');
-  elements.modalDescription = screen.getByTestId('modal-description');
-  elements.modalLink = screen.getByTestId('modal-link');
   elements.modalCloseBtn = screen.getByText(/закрыть/i);
 });
 
 describe('app', () => {
-  // test('fresh application', () => {
-  //   expect(elements.formInput).toBeRequired();
-  //   expect(elements.formInput).toHaveFocus();
-  //   expect(elements.formInput).not.toHaveValue();
-  //   expect(elements.formInput).toBeEnabled();
-  //   expect(elements.formInput).not.toHaveClass('is-invalid');
-    
-  //   expect(elements.submitBtn).toBeEnabled();
-    
-  //   // expect(screen.queryByText(/Просмотр/i)).toBeNull();
-    
-    
-    
-  //   expect(elements.feedsList).toBeEmptyDOMElement();
-  //   expect(elements.postsList).toBeEmptyDOMElement();
-    
-  //   expect(elements.feedbackMessageBlock).toBeEmptyDOMElement();
-  //   expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-  //   expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
-    
-  //   expect(elements.modal).not.toHaveClass('show');
-  //   expect(elements.modalTitle).toBeEmptyDOMElement();
-  //   expect(elements.modalDescription).toBeEmptyDOMElement();
-  //   expect(elements.modalLink).toHaveAttribute('href', '#');
+  test('fresh application', () => {
+    expect(elements.formInput).toBeRequired();
+    expect(elements.formInput).toHaveFocus();
+    expect(elements.formInput).not.toHaveValue();
+    expect(elements.formInput).toBeEnabled();
+    expect(elements.formInput).not.toHaveClass('is-invalid');
 
-  //   // expect(elements.modal).toHaveStyle(`display: none;`)
-  //   expect(elements.modal).toBeInTheDocument();
-    
-  // });
+    expect(elements.submitBtn).toBeEnabled();
+
+    expect(screen.queryByText(/Просмотр/i)).toBeNull();
+    expect(elements.feedsList).toBeEmptyDOMElement();
+    expect(elements.postsList).toBeEmptyDOMElement();
+
+    expect(elements.feedbackMessageBlock).toBeEmptyDOMElement();
+
+    // expect(elements.modal).not.toBeVisible();
+  });
 
   test('main flow', async () => {
-    await userEvent.type(elements.formInput, 'wrong-email');
-
-    userEvent.click(elements.submitBtn);
-
-    expect(elements.formInput).toHaveClass('is-invalid');
-    expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
-    expect(elements.feedbackMessageBlock).toHaveTextContent('Ссылка должна быть валидным URL');
-
-    await userEvent.clear(elements.formInput);
-    await userEvent.type(elements.formInput, url.rssLink1);
-
     nock(url.mainLinkProxy)
       .persist()
       .defaultReplyHeaders(defaultReplyHeaders)
@@ -103,6 +77,13 @@ describe('app', () => {
       .query({ url: url.rssLink2 })
       .reply(200, dataRss2);
 
+    await userEvent.type(elements.formInput, 'wrong-email');
+    userEvent.click(elements.submitBtn);
+
+    expect(elements.feedbackMessageBlock).toHaveTextContent(/^Ссылка должна быть валидным URL$/i);
+
+    await userEvent.clear(elements.formInput);
+    await userEvent.type(elements.formInput, url.rssLink1);
     userEvent.click(elements.submitBtn);
 
     await waitFor(() => {
@@ -110,25 +91,18 @@ describe('app', () => {
       expect(elements.formInput).toHaveFocus();
       expect(elements.formInput).not.toHaveValue();
       expect(elements.formInput).toBeEnabled();
-      expect(elements.formInput).not.toHaveClass('is-invalid');
 
       expect(elements.submitBtn).toBeEnabled();
 
-      expect(elements.feedsList).not.toBeEmptyDOMElement();
-      expect(elements.postsList).not.toBeEmptyDOMElement();
-      expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-      expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-      expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-      expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-      expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-      expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
 
-      expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-      expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-      expect(elements.feedbackMessageBlock).toHaveClass('text-success');
-      expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS успешно загружен$/i);
     });
-    
 
     await userEvent.type(elements.formInput, url.rssLinkWrong);
     userEvent.click(elements.submitBtn);
@@ -137,23 +111,17 @@ describe('app', () => {
       expect(elements.formInput).toBeRequired();
       expect(elements.formInput).toHaveValue(url.rssLinkWrong);
       expect(elements.formInput).toBeEnabled();
-      expect(elements.formInput).not.toHaveClass('is-invalid');
 
       expect(elements.submitBtn).toBeEnabled();
 
-      expect(elements.feedsList).not.toBeEmptyDOMElement();
-      expect(elements.postsList).not.toBeEmptyDOMElement();
-      expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-      expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-      expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-      expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-      expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-      expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
 
-      expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-      expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
-      expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
-      expect(elements.feedbackMessageBlock).toHaveTextContent('Ресурс не содержит валидный RSS');
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^Ресурс не содержит валидный RSS$/i);
     });
 
     await userEvent.clear(elements.formInput);
@@ -165,26 +133,20 @@ describe('app', () => {
       expect(elements.formInput).toHaveFocus();
       expect(elements.formInput).not.toHaveValue();
       expect(elements.formInput).toBeEnabled();
-      expect(elements.formInput).not.toHaveClass('is-invalid');
 
       expect(elements.submitBtn).toBeEnabled();
 
-      expect(elements.feedsList).not.toBeEmptyDOMElement();
-      expect(elements.postsList).not.toBeEmptyDOMElement();
-      expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-      expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-      expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-      expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-      expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-      expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
-      expect(screen.getByText(/Lorem ipsum feed for an interval of 1 years with 1 item\(s\)/i)).toBeInTheDocument();
-      expect(screen.getByText(/This is a constantly updating lorem ipsum feed/i)).toBeInTheDocument();
-      expect(screen.getByText(/Lorem ipsum 2021-01-01T00:00:00Z/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Lorem ipsum feed for an interval of 1 years with 1 item\(s\)$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^This is a constantly updating lorem ipsum feed$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Lorem ipsum 2021-01-01T00:00:00Z$/i)).toBeInTheDocument();
 
-      expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-      expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-      expect(elements.feedbackMessageBlock).toHaveClass('text-success');
-      expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS успешно загружен$/i);
     });
 
     await userEvent.type(elements.formInput, url.rssLink1);
@@ -194,268 +156,208 @@ describe('app', () => {
       expect(elements.formInput).toBeRequired();
       expect(elements.formInput).toHaveValue(url.rssLink1);
       expect(elements.formInput).toBeEnabled();
-      expect(elements.formInput).toHaveClass('is-invalid');
 
       expect(elements.submitBtn).toBeEnabled();
 
-      expect(elements.feedsList).not.toBeEmptyDOMElement();
-      expect(elements.postsList).not.toBeEmptyDOMElement();
-      expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-      expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-      expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-      expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-      expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-      expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
-      expect(screen.getByText(/Lorem ipsum feed for an interval of 1 years with 1 item\(s\)/i)).toBeInTheDocument();
-      expect(screen.getByText(/This is a constantly updating lorem ipsum feed/i)).toBeInTheDocument();
-      expect(screen.getByText(/Lorem ipsum 2021-01-01T00:00:00Z/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Lorem ipsum feed for an interval of 1 years with 1 item\(s\)$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^This is a constantly updating lorem ipsum feed$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Lorem ipsum 2021-01-01T00:00:00Z$/i)).toBeInTheDocument();
 
-      expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-      expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
-      expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
-      expect(elements.feedbackMessageBlock).toHaveTextContent('RSS уже существует');
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS уже существует$/i);
     });
-
 
     userEvent.click(screen.getAllByText(/просмотр/i)[0]);
+    getByText(document.querySelector('#modal'), /^Lorem ipsum 2021-01-01T00:00:00Z$/i);
+    getByText(document.querySelector('#modal'), /^Cupidatat aliqua minim incididunt adipisicing officia proident quis pariatur fugiat consequat\.$/i);
+    userEvent.click(screen.getByText(/закрыть/i));
 
-    await waitFor(() => {
-      expect(elements.modal).toHaveClass('show');
-      expect(elements.modalTitle).toHaveTextContent(/Lorem ipsum 2021-01-01T00:00:00Z/i);
-      expect(elements.modalDescription).toHaveTextContent(/Cupidatat aliqua minim incididunt adipisicing officia proident quis pariatur fugiat consequat./);
-      expect(elements.modalLink).toHaveAttribute('href', 'http://example.com/test/1609459200');
-    });
+    userEvent.click(screen.getAllByText(/просмотр/i)[1]);
 
-    userEvent.click(screen.getByText(/закрыть/i), 'hide.bs.modal');
-    // userEvent.click(elements.modal, 'hide.bs.modal');
-    // document.dispatchEvent('hide.bs.modal');
-    // userEvent.fireEvent(screen.getByText(/закрыть/i), 'hide.bs.modal')
-    
-    await waitFor(() => {
-      expect(elements.modalTitle).toBeEmptyDOMElement()
-      expect(elements.modalDescription).toBeEmptyDOMElement()
-      expect(elements.modalLink).toHaveAttribute('href', '#');
+    getByText(document.querySelector('#modal'), /^Рациональные числа \/ Ruby: Составные данные$/i);
+    getByText(document.querySelector('#modal'), /^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i);
+    userEvent.click(screen.getByText(/закрыть/i));
 
-      expect(elements.modal).toHaveStyle(`display: none;`)
-      expect(elements.modal).not.toHaveClass('show');
-    });
+    userEvent.click(screen.getAllByText(/просмотр/i)[2]);
 
-    // userEvent.click(screen.getAllByText(/просмотр/i)[1]);
-    // await waitFor(() => {
-    //   expect(elements.modalTitle).toHaveTextContent(/Рациональные числа \/ Ruby: Составные данные/i);
-    //   expect(elements.modalDescription).toHaveTextContent(/Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел./);
-    //   expect(elements.modalLink).toHaveAttribute('href', /https:\/\/ru.hexlet.io\/courses\/ruby-compound-data\/lessons\/rational\/theory_unit/);
-  
-    // });
+    getByText(document.querySelector('#modal'), /^Реализация пар \/ Ruby: Составные данные$/i);
+    getByText(document.querySelector('#modal'), /^Цель: Написать собственную реализацию пар на языке Ruby\.$/i);
+    userEvent.click(screen.getByText(/закрыть/i));
   });
 
+  test('add invalid rss', async () => {
+    nock(url.mainLinkProxy)
+      .persist()
+      .defaultReplyHeaders(defaultReplyHeaders)
+      .get('/get')
+      .query({ url: url.rssLinkWrong })
+      .reply(200, 'wronge-response');
 
-  
-  // test('add invalid rss', async () => {
-  //   nock(url.mainLinkProxy)
-  //     .persist()
-  //     .defaultReplyHeaders(defaultReplyHeaders)
-  //     .get('/get')
-  //     .query({ url: url.rssLinkWrong })
-  //     .reply(200, 'wronge-response');
+    await userEvent.type(elements.formInput, url.rssLinkWrong);
+    userEvent.click(elements.submitBtn);
 
-  //   await userEvent.type(elements.formInput, url.rssLinkWrong);
-  //   userEvent.click(elements.submitBtn);
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveValue(url.rssLinkWrong);
+      expect(elements.formInput).toBeEnabled();
 
-  //   await waitFor(() => {
-  //     expect(elements.formInput).toBeRequired();
-  //     expect(elements.formInput).toHaveValue(url.rssLinkWrong);
-  //     expect(elements.formInput).toBeEnabled();
-  //     expect(elements.formInput).not.toHaveClass('is-invalid');
+      expect(elements.submitBtn).toBeEnabled();
 
-  //     expect(elements.submitBtn).toBeEnabled();
+      expect(elements.feedsList).toBeEmptyDOMElement();
+      expect(elements.postsList).toBeEmptyDOMElement();
 
-  //     expect(elements.feedsList).toBeEmptyDOMElement();
-  //     expect(elements.postsList).toBeEmptyDOMElement();
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^Ресурс не содержит валидный RSS$/i);
+    });
+  });
 
-  //     expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-  //     expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
-  //     expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
-  //     expect(elements.feedbackMessageBlock).toHaveTextContent('Ресурс не содержит валидный RSS');
-  //   });
-  // });
+  test('add one valid rss', async () => {
+    nock(url.mainLinkProxy)
+      .persist()
+      .defaultReplyHeaders(defaultReplyHeaders)
+      .get('/get')
+      .query({ url: url.rssLink1 })
+      .reply(200, dataRss1);
 
-  // test('add one valid rss', async () => {
-  //   nock(url.mainLinkProxy)
-  //     .persist()
-  //     .defaultReplyHeaders(defaultReplyHeaders)
-  //     .get('/get')
-  //     .query({ url: url.rssLink1 })
-  //     .reply(200, dataRss1);
+    await userEvent.type(elements.formInput, url.rssLink1);
+    userEvent.click(elements.submitBtn);
 
-  //   await userEvent.type(elements.formInput, url.rssLink1);
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveFocus();
+      expect(elements.formInput).not.toHaveValue();
+      expect(elements.formInput).toBeEnabled();
 
-  //   userEvent.click(elements.submitBtn);
+      expect(elements.submitBtn).toBeEnabled();
 
-  //   await waitFor(() => {
-  //     expect(elements.formInput).toBeRequired();
-  //     expect(elements.formInput).toHaveFocus();
-  //     expect(elements.formInput).not.toHaveValue();
-  //     expect(elements.formInput).toBeEnabled();
-  //     expect(elements.formInput).not.toHaveClass('is-invalid');
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
 
-  //     expect(elements.submitBtn).toBeEnabled();
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS успешно загружен$/i);
+    });
+  });
 
-  //     expect(elements.feedsList).not.toBeEmptyDOMElement();
-  //     expect(elements.postsList).not.toBeEmptyDOMElement();
-  //     expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+  test('add two already exists rss', async () => {
+    await userEvent.type(elements.formInput, url.rssLink1);
 
-  //     expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-  //     expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-  //     expect(elements.feedbackMessageBlock).toHaveClass('text-success');
-  //     expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
-  //   });
-  // });
+    nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
+      .persist()
+      .get('/get')
+      .query({ url: url.rssLink1 })
+      .reply(200, dataRss1);
 
-  // test('add two already exists rss', async () => {
-  //   await userEvent.type(elements.formInput, url.rssLink1);
+    userEvent.click(elements.submitBtn);
 
-  //   nock(url.mainLinkProxy)
-  //     .defaultReplyHeaders(defaultReplyHeaders)
-  //     .persist()
-  //     .get('/get')
-  //     .query({ url: url.rssLink1 })
-  //     .reply(200, dataRss1);
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveFocus();
+      expect(elements.formInput).not.toHaveValue();
+      expect(elements.formInput).toBeEnabled();
 
-  //   userEvent.click(elements.submitBtn);
+      expect(elements.submitBtn).toBeEnabled();
 
-  //   await waitFor(() => {
-  //     expect(elements.formInput).toBeRequired();
-  //     expect(elements.formInput).toHaveFocus();
-  //     expect(elements.formInput).not.toHaveValue();
-  //     expect(elements.formInput).toBeEnabled();
-  //     expect(elements.formInput).not.toHaveClass('is-invalid');
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
 
-  //     expect(elements.submitBtn).toBeEnabled();
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS успешно загружен$/i);
+    });
 
-  //     expect(elements.feedsList).not.toBeEmptyDOMElement();
-  //     expect(elements.postsList).not.toBeEmptyDOMElement();
-  //     expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+    await userEvent.type(elements.formInput, url.rssLink1);
+    userEvent.click(elements.submitBtn);
 
-  //     expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-  //     expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-  //     expect(elements.feedbackMessageBlock).toHaveClass('text-success');
-  //     expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
-  //   });
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveValue(url.rssLink1);
+      expect(elements.formInput).toBeEnabled();
 
-  //   await userEvent.type(elements.formInput, url.rssLink1);
-  //   userEvent.click(elements.submitBtn);
+      expect(elements.submitBtn).toBeEnabled();
 
-  //   await waitFor(() => {
-  //     expect(elements.formInput).toBeRequired();
-  //     expect(elements.formInput).toHaveValue(url.rssLink1);
-  //     expect(elements.formInput).toBeEnabled();
-  //     expect(elements.formInput).toHaveClass('is-invalid');
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
 
-  //     expect(elements.submitBtn).toBeEnabled();
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS уже существует$/i);
+    });
+  });
+  test('add two valid rss', async () => {
+    await userEvent.type(elements.formInput, url.rssLink1);
 
-  //     expect(elements.feedsList).not.toBeEmptyDOMElement();
-  //     expect(elements.postsList).not.toBeEmptyDOMElement();
-  //     expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+    nock(url.mainLinkProxy)
+      .defaultReplyHeaders(defaultReplyHeaders)
+      .persist()
+      .get('/get')
+      .query({ url: url.rssLink1 })
+      .reply(200, dataRss1)
+      .get('/get')
+      .query({ url: url.rssLink2 })
+      .reply(200, dataRss2);
 
-  //     expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-  //     expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
-  //     expect(elements.feedbackMessageBlock).not.toHaveClass('text-success');
-  //     expect(elements.feedbackMessageBlock).toHaveTextContent('RSS уже существует');
-  //   });
-  // });
-  // test('add two valid rss', async () => {
-  //   await userEvent.type(elements.formInput, url.rssLink1);
+    userEvent.click(elements.submitBtn);
 
-  //   nock(url.mainLinkProxy)
-  //     .defaultReplyHeaders(defaultReplyHeaders)
-  //     .persist()
-  //     .get('/get')
-  //     .query({ url: url.rssLink1 })
-  //     .reply(200, dataRss1)
-  //     .get('/get')
-  //     .query({ url: url.rssLink2 })
-  //     .reply(200, dataRss2);
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveFocus();
+      expect(elements.formInput).not.toHaveValue();
+      expect(elements.formInput).toBeEnabled();
 
-  //   userEvent.click(elements.submitBtn);
+      expect(elements.submitBtn).toBeEnabled();
 
-  //   await waitFor(() => {
-  //     expect(elements.formInput).toBeRequired();
-  //     expect(elements.formInput).toHaveFocus();
-  //     expect(elements.formInput).not.toHaveValue();
-  //     expect(elements.formInput).toBeEnabled();
-  //     expect(elements.formInput).not.toHaveClass('is-invalid');
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
 
-  //     expect(elements.submitBtn).toBeEnabled();
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS успешно загружен$/i);
+    });
 
-  //     expect(elements.feedsList).not.toBeEmptyDOMElement();
-  //     expect(elements.postsList).not.toBeEmptyDOMElement();
-  //     expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
+    await userEvent.type(elements.formInput, url.rssLink2);
+    userEvent.click(elements.submitBtn);
 
-  //     expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-  //     expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-  //     expect(elements.feedbackMessageBlock).toHaveClass('text-success');
-  //     expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
-  //   });
+    await waitFor(() => {
+      expect(elements.formInput).toBeRequired();
+      expect(elements.formInput).toHaveFocus();
+      expect(elements.formInput).not.toHaveValue();
+      expect(elements.formInput).toBeEnabled();
 
-  //   await userEvent.type(elements.formInput, url.rssLink2);
-  //   userEvent.click(elements.submitBtn);
+      expect(elements.submitBtn).toBeEnabled();
 
-  //   await waitFor(() => {
-  //     expect(elements.formInput).toBeRequired();
-  //     expect(elements.formInput).toHaveFocus();
-  //     expect(elements.formInput).not.toHaveValue();
-  //     expect(elements.formInput).toBeEnabled();
-  //     expect(elements.formInput).not.toHaveClass('is-invalid');
+      expect(screen.getByText(/^Фиды$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Новые уроки на Хекслете$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Практические уроки по программированию$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Посты$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Рациональные числа \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Реализация пар \/ Ruby: Составные данные$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Lorem ipsum feed for an interval of 1 years with 1 item\(s\)$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^This is a constantly updating lorem ipsum feed$/i)).toBeInTheDocument();
+      expect(screen.getByText(/^Lorem ipsum 2021-01-01T00:00:00Z$/i)).toBeInTheDocument();
 
-  //     expect(elements.submitBtn).toBeEnabled();
+      expect(elements.feedbackMessageBlock).toHaveTextContent(/^RSS успешно загружен$/i);
+    });
+  });
 
-  //     expect(elements.feedsList).not.toBeEmptyDOMElement();
-  //     expect(elements.postsList).not.toBeEmptyDOMElement();
-  //     expect(screen.getByText(/Фиды/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Новые уроки на Хекслете/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Практические уроки по программированию/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Посты/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Рациональные числа \/ Ruby: Составные данные/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Реализация пар \/ Ruby: Составные данные/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Lorem ipsum feed for an interval of 1 years with 1 item\(s\)/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/This is a constantly updating lorem ipsum feed/i)).toBeInTheDocument();
-  //     expect(screen.getByText(/Lorem ipsum 2021-01-01T00:00:00Z/i)).toBeInTheDocument();
+  test('invalid link', async () => {
+    await userEvent.type(elements.formInput, 'wrong-email');
 
-  //     expect(elements.feedbackMessageBlock).not.toBeEmptyDOMElement();
-  //     expect(elements.feedbackMessageBlock).not.toHaveClass('text-danger');
-  //     expect(elements.feedbackMessageBlock).toHaveClass('text-success');
-  //     expect(elements.feedbackMessageBlock).toHaveTextContent('RSS успешно загружен');
-  //   });
-  // });
+    userEvent.click(elements.submitBtn);
 
-  // test('invalid link', async () => {
-  //   await userEvent.type(elements.formInput, 'wrong-email');
-
-  //   userEvent.click(elements.submitBtn);
-
-  //   expect(elements.formInput).toHaveClass('is-invalid');
-  //   expect(elements.feedbackMessageBlock).toHaveClass('text-danger');
-  //   expect(elements.feedbackMessageBlock).toHaveTextContent('Ссылка должна быть валидным URL');
-  // });
+    expect(elements.feedbackMessageBlock).toHaveTextContent(/^Ссылка должна быть валидным URL$/i);
+  });
 });

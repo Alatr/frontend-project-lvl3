@@ -3,18 +3,20 @@ import i18next from 'i18next';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const renderModalPosts = (modalState, postList, elements) => {
-  if(modalState.showPost === null){
-    elements.postModal.title.innerHTML = '';
-    elements.postModal.description.innerHTML = '';
-    elements.postModal.link.setAttribute('href', '#');
-    return
+  const domElements = elements;
+  if (modalState.showPost === null) {
+    domElements.postModal.title.innerHTML = '';
+    domElements.postModal.description.innerHTML = '';
+    domElements.postModal.link.setAttribute('href', '#');
+    return;
   }
-  
-  const { title, description, link } = postList.find(({ postId }) => +modalState.showPost === +postId);
 
-  elements.postModal.title.innerHTML = title;
-  elements.postModal.description.innerHTML = description;
-  elements.postModal.link.setAttribute('href', link);
+  const { title, description, link } = postList
+    .find(({ postId }) => +modalState.showPost === +postId);
+
+  domElements.postModal.title.innerHTML = title;
+  domElements.postModal.description.innerHTML = description;
+  domElements.postModal.link.setAttribute('href', link);
 };
 const renderRssPosts = (rss, elements) => {
   const list = elements.postsList;
@@ -22,7 +24,7 @@ const renderRssPosts = (rss, elements) => {
     .map(({ title, postId, link }) => (
       `<li class="list-group-item d-flex justify-content-between align-items-start">
         <a href="${link}" class="fw-${(rss.watchedPosts.includes(+postId)) ? 'normal' : 'bold'} text-decoration-none" data-id="${postId} " target="_blank" rel="noopener noreferrer">${title}</a>
-        <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-toggle="modal" data-target="#modal">${i18next.t('viewButtonModal')}</button>
+        <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-bs-toggle="modal" data-bs-target="#modal">${i18next.t('viewButtonModal')}</button>
       </li>`
     ))
     .join('\n');
@@ -132,7 +134,7 @@ export default (elements, state) => {
   };
 
   const watchedState = onChange(state, (path, value, previousValue, name) => {
-    // console.log('--------', path, value, previousValue, name);
+    console.log('--------', path, value, previousValue, name);
     if (mapping[path]) {
       mapping[path]();
     }
