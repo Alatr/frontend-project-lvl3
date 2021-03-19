@@ -1,6 +1,5 @@
 import onChange from 'on-change';
 import i18next from 'i18next';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 const renderModalPosts = (modalState, postList, elements) => {
   const domElements = elements;
