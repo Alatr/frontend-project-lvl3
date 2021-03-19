@@ -16,8 +16,6 @@
   },
   "homepage": "https://github.com/Alatr/frontend-project-lvl3#readme",
   "jest": {
-    "verbose": true,
-    "testURL": "http://localhost/",
     "moduleFileExtensions": ["js", "jsx"],
     "moduleDirectories": ["node_modules", "bower_components", "shared"],
     "moduleNameMapper": {

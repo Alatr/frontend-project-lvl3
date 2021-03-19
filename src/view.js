@@ -132,7 +132,7 @@ export default (elements, state) => {
     'modal.showPost': () => renderModalPosts(state.modal, state.rss.postsList, elements),
   };
 
-  const watchedState = onChange(state, (path, value, previousValue, name) => {
+  const watchedState = onChange(state, (path) => {
     // console.log('--------', path, value, previousValue, name);
     if (mapping[path]) {
       mapping[path]();
