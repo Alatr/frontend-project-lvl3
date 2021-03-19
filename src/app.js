@@ -19,7 +19,7 @@ function isValidRSS(xml) {
   const newDocument = parser.parseFromString(xml, 'application/xml');
   return newDocument.querySelector('rss') !== null;
 }
-const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?url=${encodeURIComponent(url)}`;
+const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
 const parseXML = (xml) => {
   const parser = new DOMParser();

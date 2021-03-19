@@ -18,10 +18,8 @@
   "jest": {
     "verbose": true,
     "testURL": "http://localhost/",
-    "moduleFileExtensions": ["js", "jsx"],
-    "moduleDirectories": ["node_modules", "bower_components", "shared"],
     "moduleNameMapper": {
-      "\\.(css|less)$": "<rootDir>__tests__/__mocks__/styleMock.js"
+      "\\.(css|less|sass)$": "identity-obj-proxy"
     }
   },
   "main": "src/init.js",

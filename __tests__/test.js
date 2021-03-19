@@ -30,6 +30,11 @@ beforeAll(() => {
   nock.disableNetConnect();
 });
 
+afterAll(() => {
+  nock.cleanAll();
+  nock.enableNetConnect();
+});
+
 beforeEach(async () => {
   const initHtml = readFile('index.html').toString().trim();
   document.body.innerHTML = initHtml;
@@ -45,6 +50,7 @@ beforeEach(async () => {
 });
 
 describe('app', () => {
+  /*
   test('fresh application', () => {
     expect(elements.formInput).toBeRequired();
     expect(elements.formInput).toHaveFocus();
@@ -359,5 +365,32 @@ describe('app', () => {
     userEvent.click(elements.submitBtn);
 
     expect(elements.feedbackMessageBlock).toHaveTextContent(/^Ссылка должна быть валидным URL$/i);
+  });
+*/
+  test('adding', async () => {
+    const url2 = {
+      mainLinkProxy: 'https://hexlet-allorigins.herokuapp.com',
+      rssLink1: 'https://ru.hexlet.io/lessons.rss',
+      rssLink2: 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1',
+      rssLinkWrong: 'https://ru.hexlet.io/lessons.wrong',
+    };
+    const scope = nock(url2.mainLinkProxy)
+      // .defaultReplyHeaders(defaultReplyHeaders)
+      // .persist()
+      .get('/get')
+      .query({ url: url2.rssLink1, disableCache: 'true' })
+      .reply(200, dataRss1);
+
+    // .query({ url: url.rssLink1 })
+    // .reply(200, dataRss1)
+
+    // nock(url.mainLinkProxy)
+    //   .defaultReplyHeaders(defaultReplyHeaders)
+    //   .persist()
+    userEvent.type(screen.getByRole('textbox', { name: 'url' }), url.rssLink1);
+    userEvent.click(screen.getByRole('button', { name: 'add' }));
+
+    expect(await screen.findByText(/RSS успешно загружен/i)).toBeInTheDocument();
+    scope.done();
   });
 });
