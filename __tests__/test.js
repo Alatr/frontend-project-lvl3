@@ -7,7 +7,7 @@ import {
 import userEvent from '@testing-library/user-event';
 import nock from 'nock';
 
-import run from '../src/app';
+import run from '../src/init.js';
 
 const getFixturePath = (filename) => path.resolve('__tests__', '__fixtures__', filename);
 const readFile = (filename) => fs.readFileSync(getFixturePath(filename), 'utf-8');
