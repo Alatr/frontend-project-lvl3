@@ -133,7 +133,7 @@ export default (elements, state) => {
   };
 
   const watchedState = onChange(state, (path, value, previousValue, name) => {
-    console.log('--------', path, value, previousValue, name);
+    // console.log('--------', path, value, previousValue, name);
     if (mapping[path]) {
       mapping[path]();
     }
