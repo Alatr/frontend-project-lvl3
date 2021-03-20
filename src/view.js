@@ -22,7 +22,7 @@ const renderRssPosts = (rss, elements) => {
   const postItems = rss.postsList
     .map(({ title, postId, link }) => (
       `<li class="list-group-item d-flex justify-content-between align-items-start">
-        <a href="${link}" class="fw-${(rss.watchedPosts.includes(+postId)) ? 'normal' : 'bold'} text-decoration-none" data-id="${postId} " target="_blank" rel="noopener noreferrer">${title}</a>
+        <a href="${link}" class="fw-${(rss.watchedPosts.includes(+postId)) ? 'normal font-weight-normal' : 'bold font-weight-bold'} text-decoration-none" data-id="${postId} " target="_blank" rel="noopener noreferrer">${title}</a>
         <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-bs-toggle="modal" data-bs-target="#modal">${i18next.t('viewButtonModal')}</button>
       </li>`
     ))
@@ -54,7 +54,7 @@ const renderRssValidation = (rss, elements) => {
       DOMElements.feedbackMessageBlock.classList.add('text-danger');
       DOMElements.feedbackMessageBlock.textContent = rss.errors;
       DOMElements.submitBtn.removeAttribute('disabled');
-      DOMElements.formInput.removeAttribute('disabled');
+      DOMElements.formInput.removeAttribute('readonly');
       break;
     case 'subscribeError':
       DOMElements.feedbackMessageBlock.classList.add('text-danger');
@@ -92,27 +92,27 @@ const renderFormValidation = (form, elements) => {
       break;
     case 'sanding':
       elements.submitBtn.setAttribute('disabled', true);
-      elements.formInput.setAttribute('disabled', true);
+      elements.formInput.setAttribute('readonly', true);
       break;
     case 'filling':
       elements.submitBtn.removeAttribute('disabled');
-      elements.formInput.removeAttribute('disabled');
+      elements.formInput.removeAttribute('readonly');
       break;
     case 'filed':
       DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.unknownError');
       elements.feedbackMessageBlock.classList.add('text-danger');
       elements.submitBtn.removeAttribute('disabled');
-      elements.formInput.removeAttribute('disabled');
+      elements.formInput.removeAttribute('readonly');
       break;
     case 'networkFiled':
       DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
       elements.feedbackMessageBlock.classList.add('text-danger');
       elements.submitBtn.removeAttribute('disabled');
-      elements.formInput.removeAttribute('disabled');
+      elements.formInput.removeAttribute('readonly');
       break;
     case 'success':
       elements.submitBtn.removeAttribute('disabled');
-      elements.formInput.removeAttribute('disabled');
+      elements.formInput.removeAttribute('readonly');
       break;
 
     default:
