@@ -177,14 +177,17 @@ export default () => {
       .catch((error) => {
         if (!!error.isAxiosError && !error.response) {
           watchedState.form.processState = 'networkFiled';
+          return;
           throw new Error(error);
         }
         if (error.message === 'invalidRSS') {
           watchedState.rss.errors = i18next.t('errorMessages.invalidRss');
           watchedState.rss.processState = 'invalid';
+          return;
           throw new Error(error);
         }
         watchedState.form.processState = 'filed';
+        return;
         throw new Error(error);
       });
   });
