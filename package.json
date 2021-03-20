@@ -20,7 +20,10 @@
     "testURL": "http://localhost/",
     "moduleNameMapper": {
       "\\.(css|less|sass)$": "identity-obj-proxy"
-    }
+    },
+    "setupFilesAfterEnv": [
+      "./jest.setup.js"
+    ]
   },
   "main": "src/init.js",
   "dependencies": {

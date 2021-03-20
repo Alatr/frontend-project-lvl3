@@ -150,6 +150,8 @@ export default () => {
       return;
     }
 
+    subscribe(watchedState.rss);
+
     watchedState.form.processState = 'sanding';
     axios.get(addProxy(formData.get('url')))
       .then((response) => {
@@ -170,17 +172,17 @@ export default () => {
           if (watchedState.rss.subscribedUrls.length === 1) resolve(watchedState.rss);
         });
       })
-      .then((rssState) => subscribe(rssState))
+      // .then((rssState) => subscribe(rssState))
 
       .catch((error) => {
         if (!!error.isAxiosError && !error.response) {
           watchedState.form.processState = 'networkFiled';
-          return;
+          throw new Error(error);
         }
         if (error.message === 'invalidRSS') {
           watchedState.rss.errors = i18next.t('errorMessages.invalidRss');
           watchedState.rss.processState = 'invalid';
-          return;
+          throw new Error(error);
         }
         watchedState.form.processState = 'filed';
         throw new Error(error);
