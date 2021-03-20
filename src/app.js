@@ -44,6 +44,7 @@ const parseXML = (xml) => {
 
 function subscribe(rssState) {
   const state = rssState;
+  console.log(state.subscribedUrls);
   const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
     .then((response) => ({ status: 'success', xml: response.data.contents }))
     .catch((error) => ({ status: 'error', error })));
@@ -125,7 +126,8 @@ export default () => {
     },
   };
   const watchedState = initView(elements, state);
-
+  
+  subscribe(watchedState.rss);
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
 
@@ -150,7 +152,6 @@ export default () => {
       return;
     }
 
-    subscribe(watchedState.rss);
 
     watchedState.form.processState = 'sanding';
     axios.get(addProxy(formData.get('url')))
