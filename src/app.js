@@ -44,7 +44,6 @@ const parseXML = (xml) => {
 
 function subscribe(rssState) {
   const state = rssState;
-  console.log(state.subscribedUrls);
   const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
     .then((response) => ({ status: 'success', xml: response.data.contents }))
     .catch((error) => ({ status: 'error', error })));
@@ -72,13 +71,6 @@ function subscribe(rssState) {
 }
 
 export default () => {
-  // i18next.init({
-  //   lng: 'ru',
-  //   debug: true,
-  //   resources,
-  // })
-  // .then(() => {
-  // console.log(i18InArg.t('errorMessages.url'), r);
   yup.setLocale({
     string: {
       url: i18next.t('errorMessages.url'),
@@ -126,7 +118,7 @@ export default () => {
     },
   };
   const watchedState = initView(elements, state);
-  
+
   subscribe(watchedState.rss);
   elements.form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -152,7 +144,6 @@ export default () => {
       return;
     }
 
-
     watchedState.form.processState = 'sanding';
     axios.get(addProxy(formData.get('url')))
       .then((response) => {
@@ -173,23 +164,18 @@ export default () => {
           if (watchedState.rss.subscribedUrls.length === 1) resolve(watchedState.rss);
         });
       })
-      // .then((rssState) => subscribe(rssState))
 
       .catch((error) => {
         if (!!error.isAxiosError && !error.response) {
           watchedState.form.processState = 'networkFiled';
           return;
-          throw new Error(error);
         }
         if (error.message === 'invalidRSS') {
           watchedState.rss.errors = i18next.t('errorMessages.invalidRss');
           watchedState.rss.processState = 'invalid';
           return;
-          throw new Error(error);
         }
         watchedState.form.processState = 'filed';
-        return;
-        throw new Error(error);
       });
   });
 
@@ -211,8 +197,4 @@ export default () => {
       watchedState.modal.showPost = null;
     });
   });
-  // })
-  // .catch((error) => {
-  //   throw new Error(error);
-  // });
 };
