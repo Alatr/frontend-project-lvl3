@@ -202,7 +202,7 @@ describe('app', () => {
     userEvent.click(screen.getAllByText(/просмотр/i)[0]);
     expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).toBeInTheDocument();
     userEvent.click(screen.getByText(/закрыть/i));
-    expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).toBeNull();
+    expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).not.toBeInTheDocument();
 
     userEvent.click(screen.getAllByText(/просмотр/i)[1]);
     scope.done();
