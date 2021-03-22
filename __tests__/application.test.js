@@ -13,6 +13,7 @@ const getFixturePath = (filename) => path.resolve('__tests__', '__fixtures__', f
 const readFixture = (filename) => fs.readFileSync(getFixturePath(filename), 'utf-8');
 
 const elements = {};
+const initHtml = fs.readFileSync(path.resolve('index.html'), 'utf-8').toString().trim();
 const responseRss1 = readFixture('data-rss-1.txt').toString().trim();
 const responseRss2 = readFixture('data-rss-2.txt').toString().trim();
 const titlePosts = [
@@ -40,10 +41,8 @@ const urls = {
   rssRequest2: { url: 'http://lorem-rss.herokuapp.com/feed?unit=year&length=1', ...proxySetting },
   rssWrongRequest: { url: 'https://ru.hexlet.io/lessons.wrong', ...proxySetting },
 };
-let initHtml;
 beforeAll(() => {
   nock.disableNetConnect();
-  initHtml = fs.readFileSync(path.resolve('index.html'), 'utf-8').toString().trim();
 });
 
 afterAll(() => {
