@@ -1,6 +1,6 @@
 # RSS aggregator
 
-The rss aggregator allows you to subscribe to news and follow their updates. All you need to do is insert the link of the  rss aggregator and click the add button, and if the aggregator is valid you will see a list of all available posts. Posts that have not yet been read are in bold font. Important it is impossible to add 2 identical aggregator links.
+The rss aggregator allows you to subscribe rss feeds and follow their updates. All you need to do is insert the link of the rss feeds and click the add button, and if the rss feeds link is valid you will see a list of all available posts. Posts that have not yet been read are in bold font. Important it is impossible to add 2 identical aggregator links.
 
 ### Hexlet tests and linter status:
 [![Actions Status](https://github.com/Alatr/frontend-project-lvl3/workflows/hexlet-check/badge.svg)](https://github.com/Alatr/frontend-project-lvl3/actions)

@@ -1,8 +1,8 @@
 develop:
-	npx webpack serve
+	npm run develop
 
 install:
-	npm ci
+	npm install
 
 build:
 	rm -rf dist
@@ -15,6 +15,6 @@ test-coverage:
 	npm test -- --coverage --coverageProvider=v8
 
 lint:
-	npx eslint .
+	npm run lint
 
 .PHONY: test

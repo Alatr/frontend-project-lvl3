@@ -7,7 +7,7 @@
   </head>
   <body>
     
-    <div class="modal fade" id="modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="modal" data-testid="modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
       <div class="modal-dialog">
         <div class="modal-content">
           <div class="modal-header">
@@ -35,16 +35,16 @@
                   </div>
                 </form>
                 <p class="text-muted my-1">Пример: https://ru.hexlet.io/lessons.rss</p>
-                <div class="feedback" data-feedback-block></div>
+                <div class="feedback" data-feedback-block data-testid="feedback"></div>
             </div>
           </div>
       </section>
       <section class="container-fluid p-5">
           <div class="row">
-            <div class="col-md-10 col-lg-8 mx-auto feeds" data-feeds-list></div>
+            <div class="col-md-10 col-lg-8 mx-auto feeds" data-feeds-list data-testid="feeds"></div>
           </div>
           <div class="row">
-            <div class="col-md-10 col-lg-8 mx-auto posts" data-posts-list></div>
+            <div class="col-md-10 col-lg-8 mx-auto posts" data-posts-list data-testid="posts"></div>
           </div>
       </section>
     </main>

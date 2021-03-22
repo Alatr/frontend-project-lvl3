@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "RSS aggregator",
   "scripts": {
-    "test": "npx jest --colors"
+    "test": "jest --colors",
+    "lint": "eslint .",
+    "develop": "webpack serve"
   },
   "repository": {
     "type": "git",
@@ -17,7 +19,6 @@
   "homepage": "https://github.com/Alatr/frontend-project-lvl3#readme",
   "jest": {
     "verbose": true,
-    "testURL": "http://localhost/",
     "moduleNameMapper": {
       "\\.(css|less|sass)$": "identity-obj-proxy"
     },
