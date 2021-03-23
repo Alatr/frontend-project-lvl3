@@ -101,7 +101,7 @@ export default () => {
 
     elements.form.addEventListener('submit', addRssHandler(watchedState, instances));
 
-    elements.postsList.addEventListener('click', readFeedHandler(watchedState));
+    elements.postsList.addEventListener('click', readFeedHandler(watchedState, instances.modal));
 
     elements.postModal.closedElements.forEach((closeBtn) => {
       closeBtn.addEventListener('click', (event) => {
@@ -109,7 +109,5 @@ export default () => {
         watchedState.modal.showPost = null;
       });
     });
-
-    // init();
   });
 };

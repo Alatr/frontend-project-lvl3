@@ -18,59 +18,7 @@ function isValidRSS(xml) {
   return newDocument.querySelector('rss') !== null;
 }
 
-// export default () => {
-// yup.setLocale({
-//   string: {
-//     url: instances.i18next.t('errorMessages.url'),
-//   },
-// });
-
-// const elements = {
-//   form: document.querySelector('[data-rss-form]'),
-//   formInput: document.querySelector('[data-rss-form] [data-rss-input]'),
-//   submitBtn: document.querySelector('[data-rss-form] [data-submit-button]'),
-//   formSubmitButton: document.querySelector('[data-rss-form] [data-rss-input]'),
-//   feedsList: document.querySelector('[data-feeds-list]'),
-//   postsList: document.querySelector('[data-posts-list]'),
-//   feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
-//   postModal: {
-//     modal: document.getElementById('modal'),
-//     instanse: new Modal(document.getElementById('modal'), { backdrop: 'static' }),
-//     closedElements: [...document.querySelectorAll('[data-bs-dismiss="modal"]')],
-//     title: document.querySelector('[data-modal-title]'),
-//     description: document.querySelector('[data-modal-description]'),
-//     link: document.querySelector('[data-modal-link]'),
-//   },
-// };
-
-// const state = {
-//   rss: {
-//     feedsList: [],
-//     postsList: [],
-//     watchedPosts: [],
-//     processState: 'filling',
-//     errors: null,
-//     subscribedUrls: [],
-//   },
-//   form: {
-//     processState: 'filling',
-//     processError: null,
-//     fields: {
-//       url: null,
-//     },
-//     valid: true,
-//     errors: null,
-//   },
-//   modal: {
-//     showPost: null,
-//   },
-// };
-// const watchedState = initView(elements, state);
-
-// subscribe(watchedState.rss);
-
 export const addRssHandler = (state, instances) => (event) => {
-  // elements.form.addEventListener('submit', (event) => {
   event.preventDefault();
   const watchedState = state;
 
@@ -94,10 +42,10 @@ export const addRssHandler = (state, instances) => (event) => {
   watchedState.form.processState = 'validUrl';
 
   if (watchedState.rss.subscribedUrls.includes(formData.get('url'))) {
-    watchedState.rss.errors = null;
-    watchedState.rss.errors = instances.i18next.t('errorMessages.alreadyExists');
-    watchedState.rss.processState = 'subscribeError';
-    watchedState.rss.processState = 'filling';
+    watchedState.form.errors = null;
+    watchedState.form.errors = instances.i18next.t('errorMessages.alreadyExists');
+    watchedState.form.processState = 'filling';
+    watchedState.form.processState = 'subscribeError';
     return;
   }
 
@@ -107,9 +55,9 @@ export const addRssHandler = (state, instances) => (event) => {
       watchedState.form.processState = 'filling';
       if (!isValidRSS(response.data.contents)) throw new Error('invalidRSS');
 
-      watchedState.rss.errors = null;
-      watchedState.rss.processState = 'success';
-      watchedState.rss.processState = 'filling';
+      watchedState.form.errors = null;
+      watchedState.form.processState = 'filling';
+      watchedState.form.processState = 'successAddFeed';
 
       const { feed, posts } = xmlParser(response.data.contents);
       watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
@@ -128,8 +76,9 @@ export const addRssHandler = (state, instances) => (event) => {
         return;
       }
       if (error.message === 'invalidRSS') {
-        watchedState.rss.errors = instances.i18next.t('errorMessages.invalidRss');
-        watchedState.rss.processState = 'invalid';
+        watchedState.form.errors = instances.i18next.t('errorMessages.invalidRss');
+        watchedState.form.processState = 'filling';
+        watchedState.form.processState = 'invalidRssFeed';
         return;
       }
       watchedState.form.processState = 'filed';
@@ -137,18 +86,15 @@ export const addRssHandler = (state, instances) => (event) => {
 };
 
 export const readFeedHandler = (state) => (event) => {
-  // elements.postsList.addEventListener('click', (event) => {
   event.preventDefault();
   const watchedState = state;
 
+  console.log(event.target);
   if (event.target.closest('[data-bs-toggle="modal"]') !== null) {
     const id = +event.target.dataset.id;
     watchedState.modal.showPost = id;
-
     if (!watchedState.rss.watchedPosts.includes(id)) {
       watchedState.rss.watchedPosts.push(id);
     }
   }
 };
-
-// };

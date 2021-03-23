@@ -46,34 +46,6 @@ const renderRssFeeds = (rss, instances, elements) => {
     </ul>`;
 };
 
-const renderRssValidation = (rss, instances, elements) => {
-  const DOMElements = elements;
-  switch (rss.processState) {
-    case 'invalid':
-      DOMElements.feedbackMessageBlock.classList.add('text-danger');
-      DOMElements.feedbackMessageBlock.textContent = rss.errors;
-      DOMElements.submitBtn.removeAttribute('disabled');
-      DOMElements.formInput.removeAttribute('readonly');
-      break;
-    case 'subscribeError':
-      DOMElements.feedbackMessageBlock.classList.add('text-danger');
-      DOMElements.feedbackMessageBlock.textContent = rss.errors;
-      elements.formInput.classList.add('is-invalid');
-
-      break;
-    case 'filling':
-      break;
-    case 'success':
-      DOMElements.formInput.value = '';
-      DOMElements.formInput.focus();
-      DOMElements.feedbackMessageBlock.classList.add('text-success');
-      DOMElements.feedbackMessageBlock.textContent = instances.i18next.t('successLoadValidation');
-      break;
-    default:
-      throw Error(`Unknown rss processState: ${rss.processState}`);
-  }
-};
-
 const renderFormValidation = (form, instances, elements) => {
   const DOMElements = elements;
 
@@ -81,6 +53,23 @@ const renderFormValidation = (form, instances, elements) => {
   elements.feedbackMessageBlock.classList.remove('text-success', 'text-danger');
 
   switch (form.processState) {
+    case 'invalidRssFeed':
+      DOMElements.feedbackMessageBlock.classList.add('text-danger');
+      DOMElements.feedbackMessageBlock.textContent = form.errors;
+      DOMElements.submitBtn.removeAttribute('disabled');
+      DOMElements.formInput.removeAttribute('readonly');
+      break;
+    case 'successAddFeed':
+      DOMElements.formInput.value = '';
+      DOMElements.formInput.focus();
+      DOMElements.feedbackMessageBlock.classList.add('text-success');
+      DOMElements.feedbackMessageBlock.textContent = instances.i18next.t('successLoadValidation');
+      break;
+    case 'subscribeError':
+      DOMElements.feedbackMessageBlock.classList.add('text-danger');
+      DOMElements.feedbackMessageBlock.textContent = form.errors;
+      elements.formInput.classList.add('is-invalid');
+      break;
     case 'error':
       elements.formInput.classList.add('is-invalid');
       elements.feedbackMessageBlock.classList.add('text-danger');
@@ -124,7 +113,6 @@ export default (elements, instances, state) => {
 
   const mapping = {
     'form.processState': () => renderFormValidation(state.form, instances, elements),
-    'rss.processState': () => renderRssValidation(state.rss, instances, elements),
     'rss.feedsList': () => renderRssFeeds(state.rss, instances, elements),
     'rss.postsList': () => renderRssPosts(state.rss, instances, elements),
     'rss.watchedPosts': () => renderRssPosts(state.rss, instances, elements),
