@@ -14,8 +14,8 @@ const readFixture = (filename) => fs.readFileSync(getFixturePath(filename), 'utf
 
 const elements = {};
 const initHtml = fs.readFileSync(path.resolve('index.html'), 'utf-8').toString().trim();
-const responseRss1 = readFixture('data-rss-1.txt').toString().trim();
-const responseRss2 = readFixture('data-rss-2.txt').toString().trim();
+const responseRss1 = readFixture('data-rss-1.rss').toString().trim();
+const responseRss2 = readFixture('data-rss-2.rss').toString().trim();
 const titlePosts = [
   'Фиды',
   'Посты',
@@ -72,15 +72,14 @@ describe('app', () => {
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
     userEvent.click(elements.submitBtn);
 
-    await waitFor(() => {
-      expect(elements.formInput).toHaveFocus();
-      expect(elements.formInput).not.toHaveValue();
-      expect(elements.formInput).not.toHaveAttribute('readonly');
+    await screen.findByText(/RSS успешно загружен/i);
 
-      expect(elements.submitBtn).toBeEnabled();
+    expect(elements.formInput).toHaveFocus();
+    expect(elements.formInput).not.toHaveValue();
+    expect(elements.formInput).not.toHaveAttribute('readonly');
 
-      expect(screen.getByText(/^RSS успешно загружен$/i)).toBeInTheDocument();
-    });
+    expect(elements.submitBtn).toBeEnabled();
+
     scope.done();
   });
 
@@ -93,11 +92,10 @@ describe('app', () => {
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
     userEvent.click(elements.submitBtn);
 
-    await waitFor(() => {
-      [...titlePosts, ...dataPostsRss1].forEach((pattern) => {
-        const regexp = new RegExp(pattern, 'i');
-        expect(screen.getByText(regexp)).toBeInTheDocument();
-      });
+    await screen.findByText(/RSS успешно загружен/i);
+
+    [...titlePosts, ...dataPostsRss1].forEach((pattern) => {
+      expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
     });
     scope.done();
   });
@@ -109,16 +107,15 @@ describe('app', () => {
       .reply(200, responseRss1);
 
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
-
     userEvent.click(elements.submitBtn);
 
-    await waitFor(async () => {
-      await userEvent.type(elements.formInput, urls.rssRequest1.url);
+    await screen.findByText(/RSS успешно загружен/i);
 
-      userEvent.click(elements.submitBtn);
+    await userEvent.type(elements.formInput, urls.rssRequest1.url);
+    userEvent.click(elements.submitBtn);
 
-      expect(screen.queryByText(/RSS уже существует/i)).toBeInTheDocument();
-    });
+    expect(screen.queryByText(/RSS уже существует/i)).toBeInTheDocument();
+
     scope.done();
   });
 
@@ -134,21 +131,19 @@ describe('app', () => {
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
     userEvent.click(elements.submitBtn);
 
-    await waitFor(async () => {
-      await userEvent.type(elements.formInput, urls.rssRequest2.url);
-      userEvent.click(elements.submitBtn);
+    await screen.findByText(/RSS успешно загружен/i);
 
-      expect(await screen.findByText(/RSS успешно загружен/i)).toBeInTheDocument();
+    await userEvent.type(elements.formInput, urls.rssRequest2.url);
+    userEvent.click(elements.submitBtn);
 
-      [...titlePosts, ...dataPostsRss1].forEach((pattern) => {
-        const regexp = new RegExp(pattern, 'i');
-        expect(screen.getByText(regexp)).toBeInTheDocument();
-      });
+    expect(await screen.findByText(/RSS успешно загружен/i)).toBeInTheDocument();
+
+    [...titlePosts, ...dataPostsRss1].forEach((pattern) => {
+      expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
     });
 
-    // [...dataPostsRss2].forEach(async (pattern) => {
-    //   const regexp = new RegExp(pattern,"i");
-    //   expect(await screen.findByText(regexp)).toBeInTheDocument();
+    // dataPostsRss2.forEach((pattern) => {
+    //   expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
     // });
 
     // scope.done()
@@ -183,64 +178,63 @@ describe('app', () => {
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
     userEvent.click(elements.submitBtn);
 
-    await waitFor(() => {
-      userEvent.click(screen.getAllByText(/просмотр/i)[0]);
-      expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).toBeInTheDocument();
-      userEvent.click(screen.getByText(/закрыть/i));
-      expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).not.toBeInTheDocument();
+    await screen.findByText(/RSS успешно загружен/i);
 
-      userEvent.click(screen.getAllByText(/просмотр/i)[1]);
+    userEvent.click(screen.getAllByText(/просмотр/i)[0]);
+    expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).toBeInTheDocument();
+    userEvent.click(screen.getByText(/закрыть/i));
+    expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).not.toBeInTheDocument();
+
+    scope.done();
+  });
+
+  test('fresh application', () => {
+    expect(elements.formInput).not.toHaveValue();
+    expect(elements.formInput).not.toHaveAttribute('readonly');
+
+    expect(elements.submitBtn).toBeEnabled();
+
+    expect(elements.feedsList).toBeEmptyDOMElement();
+    expect(elements.postsList).toBeEmptyDOMElement();
+
+    expect(elements.feedbackMessageBlock).toBeEmptyDOMElement();
+
+    expect(elements.modal).not.toHaveClass('show');
+  });
+
+  test('network error', async () => {
+    const error = { message: 'network error', isAxiosError: true };
+
+    nock(urls.mainLinkProxy)
+      .get('/get')
+      .query(urls.rssRequest1)
+      .replyWithError(error);
+
+    await userEvent.type(elements.formInput, urls.rssRequest1.url);
+    userEvent.click(elements.submitBtn);
+
+    expect(await screen.findByText(/Ошибка сети/i)).toBeInTheDocument();
+  });
+
+  test('accessibility ui', async () => {
+    const scope = nock(urls.mainLinkProxy)
+      .get('/get')
+      .query(urls.rssRequest1)
+      .reply(200, responseRss1);
+
+    expect(elements.formInput).not.toHaveAttribute('readonly');
+    expect(elements.submitBtn).toBeEnabled();
+
+    await userEvent.type(elements.formInput, urls.rssRequest1.url);
+    userEvent.click(elements.submitBtn);
+
+    expect(elements.formInput).toHaveAttribute('readonly');
+    expect(elements.submitBtn).toBeDisabled();
+
+    await waitFor(() => {
+      expect(elements.formInput).not.toHaveAttribute('readonly');
+      expect(elements.submitBtn).toBeEnabled();
     });
     scope.done();
   });
-});
-
-test('fresh application', () => {
-  expect(elements.formInput).not.toHaveValue();
-  expect(elements.formInput).not.toHaveAttribute('readonly');
-
-  expect(elements.submitBtn).toBeEnabled();
-
-  expect(elements.feedsList).toBeEmptyDOMElement();
-  expect(elements.postsList).toBeEmptyDOMElement();
-
-  expect(elements.feedbackMessageBlock).toBeEmptyDOMElement();
-
-  expect(elements.modal).not.toHaveClass('show');
-});
-
-test('network error', async () => {
-  const error = { message: 'network error', isAxiosError: true };
-
-  nock(urls.mainLinkProxy)
-    .get('/get')
-    .query(urls.rssRequest1)
-    .replyWithError(error);
-
-  await userEvent.type(elements.formInput, urls.rssRequest1.url);
-  userEvent.click(elements.submitBtn);
-
-  expect(await screen.findByText(/Ошибка сети/i)).toBeInTheDocument();
-});
-
-test('accessibility ui', async () => {
-  const scope = nock(urls.mainLinkProxy)
-    .get('/get')
-    .query(urls.rssRequest1)
-    .reply(200, responseRss1);
-
-  expect(elements.formInput).not.toHaveAttribute('readonly');
-  expect(elements.submitBtn).toBeEnabled();
-
-  await userEvent.type(elements.formInput, urls.rssRequest1.url);
-  userEvent.click(elements.submitBtn);
-
-  expect(elements.formInput).toHaveAttribute('readonly');
-  expect(elements.submitBtn).toBeDisabled();
-
-  await waitFor(() => {
-    expect(elements.formInput).not.toHaveAttribute('readonly');
-    expect(elements.submitBtn).toBeEnabled();
-  });
-  scope.done();
 });

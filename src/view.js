@@ -1,5 +1,4 @@
 import onChange from 'on-change';
-import i18next from 'i18next';
 
 const renderModalPosts = (modalState, postList, elements) => {
   const domElements = elements;
@@ -17,23 +16,23 @@ const renderModalPosts = (modalState, postList, elements) => {
   domElements.postModal.description.innerHTML = description;
   domElements.postModal.link.setAttribute('href', link);
 };
-const renderRssPosts = (rss, elements) => {
+const renderRssPosts = (rss, instances, elements) => {
   const list = elements.postsList;
   const postItems = rss.postsList
     .map(({ title, postId, link }) => (
       `<li class="list-group-item d-flex justify-content-between align-items-start">
         <a href="${link}" class="fw-${(rss.watchedPosts.includes(+postId)) ? 'normal font-weight-normal' : 'bold font-weight-bold'} text-decoration-none" data-id="${postId} " target="_blank" rel="noopener noreferrer">${title}</a>
-        <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-bs-toggle="modal" data-bs-target="#modal">${i18next.t('viewButtonModal')}</button>
+        <button type="button" class="btn btn-primary btn-sm" data-id="${postId}" data-bs-toggle="modal" data-bs-target="#modal">${instances.i18next.t('viewButtonModal')}</button>
       </li>`
     ))
     .join('\n');
   list.innerHTML = `
-    <h2>${i18next.t('titlePost')}</h2>
+    <h2>${instances.i18next.t('titlePost')}</h2>
     <ul class="list-group">
       ${postItems}
     </ul>`;
 };
-const renderRssFeeds = (rss, elements) => {
+const renderRssFeeds = (rss, instances, elements) => {
   const list = elements.feedsList;
   const feedsItems = rss.feedsList
     .map(({ title, description }) => `<li class="list-group-item"><h3>${title}</h3><p>${description}</p></li>`)
@@ -41,13 +40,13 @@ const renderRssFeeds = (rss, elements) => {
     .join('\n');
 
   list.innerHTML = `
-    <h2>${i18next.t('titleFeed')}</h2>
+    <h2>${instances.i18next.t('titleFeed')}</h2>
     <ul class="list-group mb-5">
         ${feedsItems}
     </ul>`;
 };
 
-const renderRssValidation = (rss, elements) => {
+const renderRssValidation = (rss, instances, elements) => {
   const DOMElements = elements;
   switch (rss.processState) {
     case 'invalid':
@@ -68,14 +67,14 @@ const renderRssValidation = (rss, elements) => {
       DOMElements.formInput.value = '';
       DOMElements.formInput.focus();
       DOMElements.feedbackMessageBlock.classList.add('text-success');
-      DOMElements.feedbackMessageBlock.textContent = i18next.t('successLoadValidation');
+      DOMElements.feedbackMessageBlock.textContent = instances.i18next.t('successLoadValidation');
       break;
     default:
       throw Error(`Unknown rss processState: ${rss.processState}`);
   }
 };
 
-const renderFormValidation = (form, elements) => {
+const renderFormValidation = (form, instances, elements) => {
   const DOMElements = elements;
 
   elements.formInput.classList.remove('is-invalid');
@@ -99,13 +98,13 @@ const renderFormValidation = (form, elements) => {
       elements.formInput.removeAttribute('readonly');
       break;
     case 'filed':
-      DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.unknownError');
+      DOMElements.feedbackMessageBlock.textContent = instances.i18next.t('errorMessages.unknownError');
       elements.feedbackMessageBlock.classList.add('text-danger');
       elements.submitBtn.removeAttribute('disabled');
       elements.formInput.removeAttribute('readonly');
       break;
     case 'networkFiled':
-      DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
+      DOMElements.feedbackMessageBlock.textContent = instances.i18next.t('errorMessages.network');
       elements.feedbackMessageBlock.classList.add('text-danger');
       elements.submitBtn.removeAttribute('disabled');
       elements.formInput.removeAttribute('readonly');
@@ -120,15 +119,15 @@ const renderFormValidation = (form, elements) => {
   }
 };
 
-export default (elements, state) => {
+export default (elements, instances, state) => {
   elements.formInput.focus();
 
   const mapping = {
-    'form.processState': () => renderFormValidation(state.form, elements),
-    'rss.processState': () => renderRssValidation(state.rss, elements),
-    'rss.feedsList': () => renderRssFeeds(state.rss, elements),
-    'rss.postsList': () => renderRssPosts(state.rss, elements),
-    'rss.watchedPosts': () => renderRssPosts(state.rss, elements),
+    'form.processState': () => renderFormValidation(state.form, instances, elements),
+    'rss.processState': () => renderRssValidation(state.rss, instances, elements),
+    'rss.feedsList': () => renderRssFeeds(state.rss, instances, elements),
+    'rss.postsList': () => renderRssPosts(state.rss, instances, elements),
+    'rss.watchedPosts': () => renderRssPosts(state.rss, instances, elements),
     'modal.showPost': () => renderModalPosts(state.modal, state.rss.postsList, elements),
   };
 
