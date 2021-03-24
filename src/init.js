@@ -1,27 +1,21 @@
 import i18next from 'i18next';
 import axios from 'axios';
 import * as yup from 'yup';
-import { Modal } from 'bootstrap';
 import initView from './view.js';
 import resources from './locales';
 import addProxy from './proxy.js';
-import xmlParser from './xmlParser.js';
+import { xmlParser, getXMLDOM } from './xmlParser.js';
 
 import { addRssHandler, readFeedHandler } from './app.js';
 
 function subscribe(rssState) {
   const state = rssState;
   const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
-    .then((response) => ({ status: 'success', xml: response.data.contents }))
+    .then((response) => ({ status: 'success', xml: getXMLDOM(response.data.contents) }))
     .catch((error) => ({ status: 'error', error })));
 
   return Promise.all(promises)
     .then((response) => new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(response);
-      }, 3000);
-    }))
-    .then((response) => {
       const newPosts = response
         .filter(({ status }) => status === 'success')
         .flatMap(({ xml }) => xmlParser(xml).posts)
@@ -30,6 +24,11 @@ function subscribe(rssState) {
       if (newPosts.length !== 0) {
         state.postsList = [...newPosts, ...state.postsList];
       }
+      setTimeout(() => {
+        resolve();
+      }, 3000);
+    }))
+    .then(() => {
       subscribe(state);
     })
     .catch((error) => {
@@ -52,7 +51,6 @@ export default () => {
 
     const instances = {
       i18next: i18nextInstance,
-      modal: new Modal(document.getElementById('modal'), { backdrop: 'static' }),
       yup,
     };
 
@@ -66,7 +64,6 @@ export default () => {
       feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
       postModal: {
         modal: document.getElementById('modal'),
-        closedElements: [...document.querySelectorAll('[data-bs-dismiss="modal"]')],
         title: document.querySelector('[data-modal-title]'),
         description: document.querySelector('[data-modal-description]'),
         link: document.querySelector('[data-modal-link]'),
@@ -74,12 +71,13 @@ export default () => {
     };
 
     const state = {
+      network: {
+        processAddRssFeed: 'filling',
+      },
       rss: {
         feedsList: [],
         postsList: [],
         watchedPosts: [],
-        processState: 'filling',
-        errors: null,
         subscribedUrls: [],
       },
       form: {
@@ -101,13 +99,10 @@ export default () => {
 
     elements.form.addEventListener('submit', addRssHandler(watchedState, instances));
 
-    elements.postsList.addEventListener('click', readFeedHandler(watchedState, instances.modal));
+    elements.postsList.addEventListener('click', readFeedHandler(watchedState));
 
-    elements.postModal.closedElements.forEach((closeBtn) => {
-      closeBtn.addEventListener('click', (event) => {
-        event.preventDefault();
-        watchedState.modal.showPost = null;
-      });
+    elements.postModal.modal.addEventListener('hide.bs.modal', () => {
+      watchedState.modal.showPost = null;
     });
   });
 };

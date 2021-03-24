@@ -1,21 +1,16 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import addProxy from './proxy.js';
-import xmlParser from './xmlParser.js';
+import { xmlParser, isValidRSS, getXMLDOM } from './xmlParser.js';
 
-function isValid(url) {
-  const schema = yup.string().url();
+function isValidURL(url, subscribedUrls) {
+  const schema = yup.string().url().notOneOf(subscribedUrls);
   try {
     schema.validateSync(url);
     return null;
   } catch (err) {
     return err.message;
   }
-}
-function isValidRSS(xml) {
-  const parser = new DOMParser();
-  const newDocument = parser.parseFromString(xml, 'application/xml');
-  return newDocument.querySelector('rss') !== null;
 }
 
 export const addRssHandler = (state, instances) => (event) => {
@@ -26,11 +21,16 @@ export const addRssHandler = (state, instances) => (event) => {
     string: {
       url: instances.i18next.t('errorMessages.url'),
     },
+    mixed: {
+      notOneOf: instances.i18next.t('errorMessages.alreadyExists'),
+    },
   });
 
   const formData = new FormData(event.target);
-  const validationError = isValid(formData.get('url'));
+  const validationError = isValidURL(formData.get('url'), watchedState.rss.subscribedUrls);
   if (validationError) {
+    watchedState.form.errors = null;
+
     watchedState.form.valid = false;
     watchedState.form.errors = validationError;
     watchedState.form.processState = 'error';
@@ -41,38 +41,29 @@ export const addRssHandler = (state, instances) => (event) => {
   watchedState.form.errors = validationError;
   watchedState.form.processState = 'validUrl';
 
-  if (watchedState.rss.subscribedUrls.includes(formData.get('url'))) {
-    watchedState.form.errors = null;
-    watchedState.form.errors = instances.i18next.t('errorMessages.alreadyExists');
-    watchedState.form.processState = 'filling';
-    watchedState.form.processState = 'subscribeError';
-    return;
-  }
-
-  watchedState.form.processState = 'sanding';
+  watchedState.network.processAddRssFeed = 'sanding';
   axios.get(addProxy(formData.get('url')))
     .then((response) => {
-      watchedState.form.processState = 'filling';
-      if (!isValidRSS(response.data.contents)) throw new Error('invalidRSS');
+      watchedState.network.processAddRssFeed = 'filling';
+      const xmldom = getXMLDOM(response.data.contents);
+
+      if (!isValidRSS(xmldom)) throw new Error('invalidRSS');
 
       watchedState.form.errors = null;
       watchedState.form.processState = 'filling';
       watchedState.form.processState = 'successAddFeed';
 
-      const { feed, posts } = xmlParser(response.data.contents);
+      const { feed, posts } = xmlParser(xmldom);
       watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
       watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
 
       watchedState.rss.subscribedUrls = [...watchedState.rss.subscribedUrls, formData.get('url')];
-
-      return new Promise((resolve) => {
-        if (watchedState.rss.subscribedUrls.length === 1) resolve(watchedState.rss);
-      });
     })
 
     .catch((error) => {
       if (!!error.isAxiosError && !error.response) {
-        watchedState.form.processState = 'networkFiled';
+        watchedState.network.processAddRssFeed = 'networkFiled';
+        watchedState.network.processAddRssFeed = 'filling';
         return;
       }
       if (error.message === 'invalidRSS') {
@@ -81,6 +72,7 @@ export const addRssHandler = (state, instances) => (event) => {
         watchedState.form.processState = 'invalidRssFeed';
         return;
       }
+      console.log(error);
       watchedState.form.processState = 'filed';
     });
 };
@@ -89,7 +81,6 @@ export const readFeedHandler = (state) => (event) => {
   event.preventDefault();
   const watchedState = state;
 
-  console.log(event.target);
   if (event.target.closest('[data-bs-toggle="modal"]') !== null) {
     const id = +event.target.dataset.id;
     watchedState.modal.showPost = id;
