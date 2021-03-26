@@ -1,7 +1,7 @@
 import * as yup from 'yup';
 import axios from 'axios';
 import addProxy from './proxy.js';
-import { xmlParser, isValidRSS, getXMLDOM } from './xmlParser.js';
+import { parseXmlToRss, isValidRSS, getXMLDOM } from './xml-to-rss-parser.js';
 
 function isValidURL(url, subscribedUrls) {
   const schema = yup.string().url().notOneOf(subscribedUrls);
@@ -47,13 +47,13 @@ export const addRssHandler = (state, instances) => (event) => {
       watchedState.network.processAddRssFeed = 'filling';
       const xmldom = getXMLDOM(response.data.contents);
 
-      if (!isValidRSS(xmldom)) throw new Error('invalidRSS');
+      // if (!isValidRSS(xmldom)) throw new Error('invalidRSS');
 
       watchedState.form.errors = null;
       watchedState.form.processState = 'filling';
       watchedState.form.processState = 'successAddFeed';
 
-      const { feed, posts } = xmlParser(xmldom);
+      const { feed, posts } = parseXmlToRss(xmldom);
       watchedState.rss.feedsList = [...watchedState.rss.feedsList, feed];
       watchedState.rss.postsList = [...posts, ...watchedState.rss.postsList];
 

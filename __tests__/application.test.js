@@ -114,7 +114,7 @@ describe('app', () => {
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
     userEvent.click(elements.submitBtn);
 
-    expect(screen.queryByText(/RSS уже существует/i)).toBeInTheDocument();
+    expect(screen.getByText(/RSS уже существует/i)).toBeInTheDocument();
 
     scope.done();
   });
@@ -154,7 +154,7 @@ describe('app', () => {
 
     userEvent.click(elements.submitBtn);
 
-    expect(screen.queryByText(/^Ссылка должна быть валидным URL$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Ссылка должна быть валидным URL$/i)).toBeInTheDocument();
   });
 
   test('add invalid rss', async () => {
@@ -181,7 +181,7 @@ describe('app', () => {
     await screen.findByText(/RSS успешно загружен/i);
 
     userEvent.click(screen.getAllByText(/просмотр/i)[0]);
-    expect(screen.queryByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).toBeInTheDocument();
+    expect(screen.getByText(/^Цель: Рассмотреть рациональные числа как новый пример абстракции на основе пар чисел\.$/i)).toBeInTheDocument();
 
     scope.done();
   });
@@ -219,9 +219,6 @@ describe('app', () => {
       .get('/get')
       .query(urls.rssRequest1)
       .reply(200, responseRss1);
-
-    expect(elements.formInput).not.toHaveAttribute('readonly');
-    expect(elements.submitBtn).toBeEnabled();
 
     await userEvent.type(elements.formInput, urls.rssRequest1.url);
     userEvent.click(elements.submitBtn);

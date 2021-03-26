@@ -4,7 +4,7 @@ import * as yup from 'yup';
 import initView from './view.js';
 import resources from './locales';
 import addProxy from './proxy.js';
-import { xmlParser, getXMLDOM } from './xmlParser.js';
+import { parseXmlToRss, getXMLDOM } from './xml-to-rss-parser.js';
 
 import { addRssHandler, readFeedHandler } from './app.js';
 
@@ -18,7 +18,7 @@ function subscribe(rssState) {
     .then((response) => new Promise((resolve) => {
       const newPosts = response
         .filter(({ status }) => status === 'success')
-        .flatMap(({ xml }) => xmlParser(xml).posts)
+        .flatMap(({ xml }) => parseXmlToRss(xml).posts)
         .filter(({ title }) => state.postsList.findIndex((post) => post.title === title) === -1);
 
       if (newPosts.length !== 0) {
