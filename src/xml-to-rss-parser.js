@@ -1,43 +1,31 @@
 import _ from 'lodash';
 
 export const parseXmlToRss = (xml) => {
-  const parser = new DOMParser().parseFromString(xml, 'application/xml');
+  const rssDOM = new DOMParser().parseFromString(xml, 'application/xml');
 
-  if (parser.querySelector('rss') === null) throw new Error('invalidRSS');
+  const parsererrorNS = new DOMParser().parseFromString('INVALID', 'application/xml').getElementsByTagName('parsererror')[0].namespaceURI;
+  if (rssDOM.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
+    throw new Error('invalidRSS');
+  }
 
-  const posts = [...xml.querySelectorAll('channel > item')].map((post) => ({
+  const posts = [...rssDOM.querySelectorAll('channel > item')].map((post) => ({
     title: post.querySelector('title').textContent,
     description: post.querySelector('description').textContent,
     link: post.querySelector('link').textContent,
   }));
   return {
-    feed: {
-      title: xml.querySelector('channel > title').textContent,
-      description: xml.querySelector('channel > description').textContent,
-      posts,
-    },
+    title: rssDOM.querySelector('channel > title').textContent,
+    description: rssDOM.querySelector('channel > description').textContent,
+    posts,
   };
 };
 
-export const isValidRSS = (xmldom) => xmldom.querySelector('rss') !== null;
+// export const isValidRSS = (xmldom) => xmldom.querySelector('rss') !== null;
 
-export const getXMLDOM = (xml) => {
-  const ID = _.uniqueId();
-  const posts = [...xmldom.querySelectorAll('channel > item')].map((post) => ({
-    feed: ID,
-    postId: _.uniqueId(),
-    title: post.querySelector('title').textContent,
-    description: post.querySelector('description').textContent,
-    link: post.querySelector('link').textContent,
-  }));
-  return {
-    feed: {
-      feedId: ID,
-      title: xmldom.querySelector('channel > title').textContent,
-      description: xmldom.querySelector('channel > description').textContent,
-      posts,
-    },
-  };
+export const normalizeRss = ({ title, description, posts }) => {
+  const feedId = _.uniqueId();
+  const normalizeFeed = { title, description, feedId };
+  const normalizePosts = posts.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
 
-  return parser;
+  return { normalizeFeed, normalizePosts };
 };
