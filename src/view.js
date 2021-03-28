@@ -79,7 +79,7 @@ export default (elements, i18next, state) => {
     switch (state.form.processState) {
       case 'invalidRssFeed':
         DOMElements.feedbackMessageBlock.classList.add('text-danger');
-        DOMElements.feedbackMessageBlock.textContent = state.form.errors;
+        DOMElements.feedbackMessageBlock.textContent = i18next.t(state.form.errors);
         DOMElements.submitBtn.removeAttribute('disabled');
         DOMElements.formInput.removeAttribute('readonly');
         break;

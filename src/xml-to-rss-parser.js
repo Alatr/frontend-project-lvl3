@@ -1,6 +1,4 @@
-import _ from 'lodash';
-
-export const parseXmlToRss = (xml) => {
+export const parseRss = (xml) => {
   const rssDOM = new DOMParser().parseFromString(xml, 'application/xml');
 
   const parsererrorNS = new DOMParser().parseFromString('INVALID', 'application/xml').getElementsByTagName('parsererror')[0].namespaceURI;
@@ -18,14 +16,4 @@ export const parseXmlToRss = (xml) => {
     description: rssDOM.querySelector('channel > description').textContent,
     posts,
   };
-};
-
-// export const isValidRSS = (xmldom) => xmldom.querySelector('rss') !== null;
-
-export const normalizeRss = ({ title, description, posts }) => {
-  const feedId = _.uniqueId();
-  const normalizeFeed = { title, description, feedId };
-  const normalizePosts = posts.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
-
-  return { normalizeFeed, normalizePosts };
 };

@@ -1,52 +1,36 @@
 import i18next from 'i18next';
+import _ from 'lodash';
 import axios from 'axios';
 import * as yup from 'yup';
 import { Modal } from 'bootstrap';
 import initView from './view.js';
 import resources from './locales';
-import { parseXmlToRss, normalizeRss } from './xml-to-rss-parser.js';
-
-function isValidURL(url, subscribedUrls, yupInstance) {
-  const schema = yupInstance.string().url().notOneOf(subscribedUrls);
-  try {
-    schema.validateSync(url);
-    return null;
-  } catch (err) {
-    return err.message;
-  }
-}
+import { parseRss } from './xml-to-rss-parser.js';
 
 const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-const addRss = (state, event, i18nextInstance, yupInstance) => {
+const normalizeRss = ({ title, description, posts }) => {
+  const feedId = _.uniqueId();
+  const normalizeFeed = { title, description, feedId };
+  const normalizePosts = posts.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
+
+  return { normalizeFeed, normalizePosts };
+};
+
+const addRss = (state) => {
   const watchedState = state;
-
-  const formData = new FormData(event.target);
-  const validationError = isValidURL(formData.get('url'), watchedState.subscribedUrls, yupInstance);
-  if (validationError) {
-    watchedState.form.errors = null;
-
-    watchedState.form.valid = false;
-    watchedState.form.errors = validationError;
-    watchedState.form.processState = 'error';
-    return;
-  }
-
-  watchedState.form.valid = true;
-  watchedState.form.errors = validationError;
-  watchedState.form.processState = 'validUrl';
-
   watchedState.network.loadingRssStatus = 'sanding';
-  axios.get(addProxy(formData.get('url')))
+
+  axios.get(addProxy(watchedState.form.fields.url))
     .then((response) => {
       watchedState.network.loadingRssStatus = 'idle';
 
-      const xmldom = parseXmlToRss(response.data.contents);
+      const xmldom = parseRss(response.data.contents);
       const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom);
 
       watchedState.feedsList = [...watchedState.feedsList, feed];
       watchedState.postsList = [...posts, ...watchedState.postsList];
-      watchedState.subscribedUrls = [...watchedState.subscribedUrls, formData.get('url')];
+      watchedState.subscribedUrls = [...watchedState.subscribedUrls, watchedState.form.fields.url];
 
       watchedState.form.errors = null;
       watchedState.form.processState = 'filling';
@@ -54,13 +38,13 @@ const addRss = (state, event, i18nextInstance, yupInstance) => {
     })
 
     .catch((error) => {
-      if (!!error.isAxiosError && !error.response) {
+      if (error.isAxiosError && !error.response) {
         watchedState.network.loadingRssStatus = 'networkFiled';
         watchedState.network.loadingRssStatus = 'idle';
         return;
       }
       if (error.message === 'invalidRSS') {
-        watchedState.form.errors = i18nextInstance.t('errorMessages.invalidRss');
+        watchedState.form.errors = 'errorMessages.invalidRss';
         watchedState.form.processState = 'filling';
         watchedState.form.processState = 'invalidRssFeed';
         return;
@@ -73,7 +57,7 @@ const addRss = (state, event, i18nextInstance, yupInstance) => {
 function subscribe(rssState) {
   const state = rssState;
   const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
-    .then((response) => ({ status: 'success', rss: parseXmlToRss(response.data.contents) }))
+    .then((response) => ({ status: 'success', rss: parseRss(response.data.contents) }))
     .catch((error) => ({ status: 'error', error })));
 
   return Promise.all(promises)
@@ -124,7 +108,7 @@ export default () => {
       feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
       postModal: {
         modal: document.getElementById('modal'),
-        modalInstance: new Modal(document.getElementById('modal'), { backdrop: 'static' }),
+        modalInstance: new Modal(document.getElementById('modal')),
         title: document.querySelector('[data-modal-title]'),
         description: document.querySelector('[data-modal-description]'),
         link: document.querySelector('[data-modal-link]'),
@@ -158,10 +142,37 @@ export default () => {
 
     subscribe(watchedState);
 
+    function isValidURL(url, subscribedUrls) {
+      const schema = yup.string().url().notOneOf(subscribedUrls);
+      try {
+        schema.validateSync(url);
+        return null;
+      } catch (err) {
+        return err.message;
+      }
+    }
+
     elements.form.addEventListener('submit', (event) => {
       event.preventDefault();
+      watchedState.form.fields.url = new FormData(event.target).get('url');
 
-      addRss(watchedState, event, i18nextInstance, yup);
+      const validationError = isValidURL(watchedState.form.fields.url, watchedState.subscribedUrls);
+
+      if (validationError) {
+        watchedState.form.errors = null;
+
+        watchedState.form.fields.url = null;
+        watchedState.form.valid = false;
+        watchedState.form.errors = validationError;
+        watchedState.form.processState = 'error';
+        return;
+      }
+
+      watchedState.form.valid = true;
+      watchedState.form.errors = validationError;
+      watchedState.form.processState = 'validUrl';
+
+      addRss(watchedState);
     });
 
     elements.postsList.addEventListener('click', (event) => {
