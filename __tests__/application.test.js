@@ -16,21 +16,25 @@ const elements = {};
 const initHtml = fs.readFileSync(path.resolve('index.html'), 'utf-8').toString().trim();
 const responseRss1 = readFixture('data-rss-1.rss').toString().trim();
 const responseRss2 = readFixture('data-rss-2.rss').toString().trim();
-const titlePosts = [
+const titleRss = [
   'Фиды',
   'Посты',
 ];
 const dataPostsRss1 = [
-  'Новые уроки на Хекслете',
-  'Практические уроки по программированию',
   'Рациональные числа / Ruby: Составные данные',
   'Реализация пар / Ruby: Составные данные',
 ];
-// const dataPostsRss2 = [
-//   'Lorem ipsum feed for an interval of 1 years with 1 item(s)',
-//   'This is a constantly updating lorem ipsum feed',
-//   'Lorem ipsum 2021-01-01T00:00:00Z',
-// ];
+const dataPostsRss2 = [
+  'Lorem ipsum 2021',
+];
+const dataFeedRss1 = [
+  'Новые уроки на Хекслете',
+  'Практические уроки по программированию',
+];
+const dataFeedRss2 = [
+  'Lorem ipsum feed for an interval of 1 years with 1 item',
+  'This is a constantly updating lorem ipsum feed',
+];
 const proxySetting = {
   disableCache: 'true',
 };
@@ -94,13 +98,13 @@ describe('app', () => {
 
     await screen.findByText(/RSS успешно загружен/i);
 
-    [...titlePosts, ...dataPostsRss1].forEach((pattern) => {
+    [...titleRss, ...dataPostsRss1, ...dataFeedRss1].forEach((pattern) => {
       expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
     });
     scope.done();
   });
 
-  test('add two already exists rss', async () => {
+  test('add already exists rss', async () => {
     const scope = nock(urls.mainLinkProxy)
       .get('/get')
       .query(urls.rssRequest1)
@@ -138,15 +142,17 @@ describe('app', () => {
 
     expect(await screen.findByText(/RSS успешно загружен/i)).toBeInTheDocument();
 
-    [...titlePosts, ...dataPostsRss1].forEach((pattern) => {
-      expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
+    await waitFor(() => {
+      [
+        ...titleRss,
+        ...dataPostsRss1,
+        ...dataPostsRss2,
+        ...dataFeedRss1,
+        ...dataFeedRss2,
+      ].forEach((pattern) => {
+        expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
+      });
     });
-
-    // dataPostsRss2.forEach((pattern) => {
-    //   expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
-    // });
-
-    // scope.done()
   });
 
   test('invalid link', async () => {

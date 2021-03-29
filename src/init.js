@@ -5,7 +5,7 @@ import * as yup from 'yup';
 import { Modal } from 'bootstrap';
 import initView from './view.js';
 import resources from './locales';
-import { parseRss } from './xml-to-rss-parser.js';
+import parseRss from './rssParser.js';
 
 const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
@@ -18,39 +18,40 @@ const normalizeRss = ({ title, description, posts }) => {
 };
 
 const addRss = (state) => {
-  const watchedState = state;
-  watchedState.network.loadingRssStatus = 'sanding';
+  state.rssLoading.processState = 'loading';
 
-  axios.get(addProxy(watchedState.form.fields.url))
+  axios.get(addProxy(state.form.fields.url))
     .then((response) => {
-      watchedState.network.loadingRssStatus = 'idle';
+      state.rssLoading.processState = 'idle';
 
       const xmldom = parseRss(response.data.contents);
       const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom);
 
-      watchedState.feedsList = [...watchedState.feedsList, feed];
-      watchedState.postsList = [...posts, ...watchedState.postsList];
-      watchedState.subscribedUrls = [...watchedState.subscribedUrls, watchedState.form.fields.url];
+      state.feedsList = [...state.feedsList, feed];
+      state.postsList = [...posts, ...state.postsList];
+      state.subscribedUrls = [...state.subscribedUrls, state.form.fields.url];
 
-      watchedState.form.errors = null;
-      watchedState.form.processState = 'filling';
-      watchedState.form.processState = 'successAddFeed';
+      state.rssLoading.errors = null;
+      state.rssLoading.processState = 'successLoad';
     })
 
     .catch((error) => {
       if (error.isAxiosError && !error.response) {
-        watchedState.network.loadingRssStatus = 'networkFiled';
-        watchedState.network.loadingRssStatus = 'idle';
+        state.rssLoading.errors = 'network-error';
+        state.rssLoading.loadingRssStatus = 'idle';
+        state.rssLoading.loadingRssStatus = 'networkFiled';
         return;
       }
       if (error.message === 'invalidRSS') {
-        watchedState.form.errors = 'errorMessages.invalidRss';
-        watchedState.form.processState = 'filling';
-        watchedState.form.processState = 'invalidRssFeed';
+        state.rssLoading.errors = 'invalidRssError';
+        state.rssLoading.processState = 'idle';
+        state.rssLoading.processState = 'invalidRssFeed';
         return;
       }
       console.error(error);
-      watchedState.form.processState = 'filed';
+      state.rssLoading.errors = 'unknown-error';
+      state.rssLoading.processState = 'idle';
+      state.rssLoading.processState = 'filed';
     });
 };
 
@@ -116,8 +117,12 @@ export default () => {
     };
 
     const state = {
-      network: {
-        processAddRssFeed: 'filling',
+      // network: {
+      //   processAddRssFeed: 'filling',
+      // },
+      rssLoading: {
+        processState: 'idle', // loading,
+        error: 'invalid_rss', // 'network_error'
       },
 
       feedsList: [],

@@ -47,27 +47,60 @@ export default (elements, i18next, state) => {
           ${feedsItems}
       </ul>`;
   };
-  const renderNetworkValidation = () => {
+  const renderRssLoading = () => {
     const DOMElements = elements;
-
-    switch (state.network.loadingRssStatus) {
-      case 'sanding':
+    switch (state.rssLoading.processState) {
+      case 'loading':
         elements.submitBtn.setAttribute('disabled', true);
         elements.formInput.setAttribute('readonly', true);
         break;
       case 'networkFiled':
-        DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
         elements.feedbackMessageBlock.classList.add('text-danger');
         elements.submitBtn.removeAttribute('disabled');
         elements.formInput.removeAttribute('readonly');
+        break;
+      case 'invalidRssFeed':
+        DOMElements.feedbackMessageBlock.classList.add('text-danger');
+        DOMElements.submitBtn.removeAttribute('disabled');
+        DOMElements.formInput.removeAttribute('readonly');
+        break;
+      case 'filed':
+        elements.feedbackMessageBlock.classList.add('text-danger');
+        elements.submitBtn.removeAttribute('disabled');
+        elements.formInput.removeAttribute('readonly');
+        break;
+      case 'successLoad':
+        DOMElements.formInput.value = '';
+        DOMElements.formInput.focus();
+        DOMElements.feedbackMessageBlock.classList.add('text-success');
+        DOMElements.feedbackMessageBlock.textContent = i18next.t('successLoadValidation');
         break;
       case 'idle':
         elements.submitBtn.removeAttribute('disabled');
         elements.formInput.removeAttribute('readonly');
         break;
-
       default:
-        throw Error(`Unknown form processState: ${state.network.processAddRssFeed}`);
+        throw Error(`Unknown form processState: ${state.rssLoading.processState}`);
+    }
+  };
+  const renderRssLoadingError = () => {
+    const DOMElements = elements;
+
+    switch (state.rssLoading.errors) {
+      case 'network-error':
+        DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
+        break;
+      case 'invalidRssError':
+        DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.invalidRss');
+        break;
+      case 'unknown-error':
+        DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.unknownError');
+        break;
+      case null:
+        elements.feedbackMessageBlock.classList.remove('text-danger');
+        break;
+      default:
+        throw Error(`Unknown form processState: ${state.rssLoading.error}`);
     }
   };
   const renderFormValidation = () => {
@@ -77,19 +110,6 @@ export default (elements, i18next, state) => {
     elements.feedbackMessageBlock.classList.remove('text-success', 'text-danger');
 
     switch (state.form.processState) {
-      case 'invalidRssFeed':
-        DOMElements.feedbackMessageBlock.classList.add('text-danger');
-        DOMElements.feedbackMessageBlock.textContent = i18next.t(state.form.errors);
-        DOMElements.submitBtn.removeAttribute('disabled');
-        DOMElements.formInput.removeAttribute('readonly');
-        break;
-      case 'successAddFeed':
-        DOMElements.formInput.value = '';
-        DOMElements.formInput.focus();
-        DOMElements.feedbackMessageBlock.classList.add('text-success');
-        DOMElements.feedbackMessageBlock.textContent = i18next.t('successLoadValidation');
-        break;
-
       case 'error':
         elements.feedbackMessageBlock.classList.add('text-danger');
         DOMElements.feedbackMessageBlock.textContent = state.form.errors;
@@ -99,12 +119,6 @@ export default (elements, i18next, state) => {
         DOMElements.feedbackMessageBlock.textContent = state.form.errors ?? '';
         break;
       case 'filling':
-        elements.submitBtn.removeAttribute('disabled');
-        elements.formInput.removeAttribute('readonly');
-        break;
-      case 'filed':
-        DOMElements.feedbackMessageBlock.textContent = i18next.t('errorMessages.unknownError');
-        elements.feedbackMessageBlock.classList.add('text-danger');
         elements.submitBtn.removeAttribute('disabled');
         elements.formInput.removeAttribute('readonly');
         break;
@@ -120,7 +134,8 @@ export default (elements, i18next, state) => {
 
   const mapping = {
     'form.processState': () => renderFormValidation(),
-    'network.loadingRssStatus': () => renderNetworkValidation(),
+    'rssLoading.processState': () => renderRssLoading(),
+    'rssLoading.errors': () => renderRssLoadingError(),
     feedsList: () => renderRssFeeds(),
     postsList: () => renderRssPosts(),
     watchedPosts: () => renderRssPosts(),

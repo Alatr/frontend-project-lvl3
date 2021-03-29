@@ -1,7 +1,9 @@
-export const parseRss = (xml) => {
+// https://stackoverflow.com/a/20294226/11264934 check invalid rss
+const parsererrorNS = new DOMParser().parseFromString('INVALID', 'application/xml').getElementsByTagName('parsererror')[0].namespaceURI;
+
+export default (xml) => {
   const rssDOM = new DOMParser().parseFromString(xml, 'application/xml');
 
-  const parsererrorNS = new DOMParser().parseFromString('INVALID', 'application/xml').getElementsByTagName('parsererror')[0].namespaceURI;
   if (rssDOM.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
     throw new Error('invalidRSS');
   }
