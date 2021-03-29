@@ -26,8 +26,8 @@ const addRss = (state) => {
       const xmldom = parseRss(response.data.contents);
       const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom);
       
-      state.feedsList = [...state.feedsList, feed];
-      state.postsList = [...posts, ...state.postsList];
+      state.feeds = [...state.feeds, feed];
+      state.posts = [...posts, ...state.posts];
       state.subscribedUrls = [...state.subscribedUrls, state.form.fields.url];
       
       state.rssLoading.errors = null;
@@ -57,22 +57,19 @@ const addRss = (state) => {
 
 const pullingDelay = 5000;
 
-function subscribe(rssState) {
-  const state = rssState;
+function subscribe(state) {
   const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
     .then((response) => ({ status: 'success', rss: parseRss(response.data.contents) }))
     .catch((error) => ({ status: 'error', error })));
 
   return Promise.all(promises)
     .then((response) => {
-      const newPosts = response
+      const normalizePosts = response
         .filter(({ status }) => status === 'success')
-        .flatMap(({ rss }) => normalizeRss(rss).normalizePosts)
-        .filter(({ title }) => state.postsList.findIndex((post) => post.title === title) === -1);
+        .flatMap(({ rss }) => normalizeRss(rss).normalizePosts);
 
-      if (newPosts.length !== 0) {
-        state.postsList = [...newPosts, ...state.postsList];
-      }
+      const newPosts = _.differenceBy(normalizePosts, state.posts, 'title');
+      state.posts = [...newPosts, ...state.posts];
     })
     .then(() => {
       setTimeout(() => {
@@ -110,25 +107,19 @@ export default () => {
       feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
       postModal: {
         modal: document.getElementById('modal'),
-        modalInstance: new Modal(document.getElementById('modal')),
-        title: document.querySelector('[data-modal-title]'),
-        description: document.querySelector('[data-modal-description]'),
-        link: document.querySelector('[data-modal-link]'),
+        modalInstance: new Modal(document.getElementById('modal'))
       },
     };
 
     const state = {
-      // network: {
-      //   processAddRssFeed: 'filling',
-      // },
       rssLoading: {
-        processState: 'idle', // loading,
-        error: 'invalid_rss', // 'network_error'
+        processState: 'idle',
+        error: null,
       },
 
-      feedsList: [],
-      postsList: [],
-      watchedPosts: new Set(),
+      feeds: [],
+      posts: [],
+      
       subscribedUrls: [],
 
       form: {
@@ -143,6 +134,9 @@ export default () => {
       modal: {
         activePost: null,
       },
+      ui: {
+        watchedPosts: new Set(),
+      }
     };
     const watchedState = initView(elements, i18nextInstance, state);
 
@@ -188,7 +182,7 @@ export default () => {
         const id = +event.target.dataset.id;
         watchedState.modal.activePost = id;
 
-        watchedState.watchedPosts.add(id);
+        watchedState.ui.watchedPosts.add(id);
       }
     });
 
