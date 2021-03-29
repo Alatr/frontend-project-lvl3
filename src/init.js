@@ -18,7 +18,6 @@ const normalizeRss = ({ title, description, posts }) => {
 };
 
 const addRss = (state) => {
-  state.rssLoading.processState = 'loading';
 
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
@@ -153,6 +152,8 @@ export default () => {
 
     elements.form.addEventListener('submit', (event) => {
       event.preventDefault();
+      watchedState.rssLoading.processState = 'loading';
+
       watchedState.form.fields.url = new FormData(event.target).get('url');
 
       const validationError = isValidURL(watchedState.form.fields.url, watchedState.subscribedUrls);
