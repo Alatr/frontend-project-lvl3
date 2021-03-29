@@ -35,7 +35,7 @@ const addRss = (state) => {
     })
 
     .catch((error) => {
-      if (error.isAxiosError && !error.response) {
+      if (!!error.isAxiosError && !error.response) {
         state.rssLoading.errors = 'network-error';
         state.rssLoading.loadingRssStatus = 'idle';
         state.rssLoading.loadingRssStatus = 'networkFiled';
