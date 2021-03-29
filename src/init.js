@@ -22,17 +22,17 @@ const addRss = (state) => {
 
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
-      state.rssLoading.processState = 'idle';
-
+      
       const xmldom = parseRss(response.data.contents);
       const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom);
-
+      
       state.feedsList = [...state.feedsList, feed];
       state.postsList = [...posts, ...state.postsList];
       state.subscribedUrls = [...state.subscribedUrls, state.form.fields.url];
-
+      
       state.rssLoading.errors = null;
       state.rssLoading.processState = 'successLoad';
+      state.rssLoading.processState = 'idle';
     })
 
     .catch((error) => {
@@ -55,6 +55,8 @@ const addRss = (state) => {
     });
 };
 
+const pullingDelay = 5000;
+
 function subscribe(rssState) {
   const state = rssState;
   const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
@@ -62,7 +64,7 @@ function subscribe(rssState) {
     .catch((error) => ({ status: 'error', error })));
 
   return Promise.all(promises)
-    .then((response) => new Promise((resolve) => {
+    .then((response) => {
       const newPosts = response
         .filter(({ status }) => status === 'success')
         .flatMap(({ rss }) => normalizeRss(rss).normalizePosts)
@@ -71,12 +73,11 @@ function subscribe(rssState) {
       if (newPosts.length !== 0) {
         state.postsList = [...newPosts, ...state.postsList];
       }
-      setTimeout(() => {
-        resolve();
-      }, 3000);
-    }))
+    })
     .then(() => {
-      subscribe(state);
+      setTimeout(() => {
+        subscribe(state);
+      }, pullingDelay);
     })
     .catch((error) => {
       throw new Error(error);
