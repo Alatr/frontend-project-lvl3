@@ -22,14 +22,13 @@ const addRss = (state) => {
 
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
-      
       const xmldom = parseRss(response.data.contents);
       const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom);
-      
+
       state.feeds = [...state.feeds, feed];
       state.posts = [...posts, ...state.posts];
       state.subscribedUrls = [...state.subscribedUrls, state.form.fields.url];
-      
+
       state.rssLoading.errors = null;
       state.rssLoading.processState = 'successLoad';
       state.rssLoading.processState = 'idle';
@@ -107,7 +106,7 @@ export default () => {
       feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
       postModal: {
         modal: document.getElementById('modal'),
-        modalInstance: new Modal(document.getElementById('modal'))
+        modalInstance: new Modal(document.getElementById('modal')),
       },
     };
 
@@ -119,7 +118,7 @@ export default () => {
 
       feeds: [],
       posts: [],
-      
+
       subscribedUrls: [],
 
       form: {
@@ -136,7 +135,7 @@ export default () => {
       },
       ui: {
         watchedPosts: new Set(),
-      }
+      },
     };
     const watchedState = initView(elements, i18nextInstance, state);
 

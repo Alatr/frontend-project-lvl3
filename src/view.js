@@ -84,7 +84,6 @@ export default (elements, i18next, state) => {
     }
   };
   const renderRssLoadingError = () => {
-
     switch (state.rssLoading.errors) {
       case 'network-error':
         elements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
@@ -103,7 +102,6 @@ export default (elements, i18next, state) => {
     }
   };
   const renderFormValidation = () => {
-
     elements.formInput.classList.remove('is-invalid');
     elements.feedbackMessageBlock.classList.remove('text-success', 'text-danger');
 
