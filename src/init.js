@@ -18,7 +18,6 @@ const normalizeRss = ({ title, description, posts }) => {
 };
 
 const addRss = (state) => {
-
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
       const xmldom = parseRss(response.data.contents);
