@@ -142,17 +142,17 @@ describe('app', () => {
 
     expect(await screen.findByText(/RSS успешно загружен/i)).toBeInTheDocument();
 
-    await waitFor(()=>{
+    await waitFor(() => {
       [
         ...titleRss,
         ...dataPostsRss1,
         ...dataPostsRss2,
         ...dataFeedRss1,
-        ...dataFeedRss2
+        ...dataFeedRss2,
       ].forEach((pattern) => {
         expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
       });
-    })
+    });
   });
 
   test('invalid link', async () => {
