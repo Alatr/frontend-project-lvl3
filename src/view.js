@@ -56,18 +56,12 @@ export default (elements, i18next, state) => {
         break;
       case 'networkFiled':
         elements.feedbackMessageBlock.classList.add('text-danger');
-        elements.submitBtn.removeAttribute('disabled');
-        elements.formInput.removeAttribute('readonly');
         break;
       case 'invalidRssFeed':
         elements.feedbackMessageBlock.classList.add('text-danger');
-        elements.submitBtn.removeAttribute('disabled');
-        elements.formInput.removeAttribute('readonly');
         break;
       case 'filed':
         elements.feedbackMessageBlock.classList.add('text-danger');
-        elements.submitBtn.removeAttribute('disabled');
-        elements.formInput.removeAttribute('readonly');
         break;
       case 'successLoad':
         elements.formInput.value = '';
