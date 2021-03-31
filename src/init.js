@@ -2,16 +2,18 @@ import i18next from 'i18next';
 import _ from 'lodash';
 import axios from 'axios';
 import * as yup from 'yup';
-import { Modal } from 'bootstrap';
+import 'bootstrap';
 import initView from './view.js';
 import resources from './locales';
 import parseRss from './rssParser.js';
 
 const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-const normalizeRss = ({ title, description, posts }) => {
+const normalizeRss = ({ title, description, posts }, urlFeed) => {
   const feedId = _.uniqueId();
-  const normalizeFeed = { title, description, feedId };
+  const normalizeFeed = {
+    title, description, feedId, urlFeed,
+  };
   const normalizePosts = posts.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
 
   return { normalizeFeed, normalizePosts };
@@ -23,11 +25,10 @@ const addRss = (state) => {
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
       const xmldom = parseRss(response.data.contents);
-      const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom);
+      const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom, state.form.fields.url);
 
       state.feeds = [...state.feeds, feed];
       state.posts = [...posts, ...state.posts];
-      state.subscribedUrls = [...state.subscribedUrls, state.form.fields.url];
 
       state.rssLoading.errors = null;
       state.rssLoading.processState = 'successLoad';
@@ -57,15 +58,15 @@ const addRss = (state) => {
 const pullingDelay = 5000;
 
 function subscribe(state) {
-  const promises = Object.values(state.subscribedUrls).map((url) => axios.get(addProxy(url))
-    .then((response) => ({ status: 'success', rss: parseRss(response.data.contents) }))
+  const promises = state.feeds.map(({ urlFeed, feedId }) => axios.get(addProxy(urlFeed))
+    .then((response) => ({ feedId, status: 'success', rss: parseRss(response.data.contents) }))
     .catch((error) => ({ status: 'error', error })));
 
   return Promise.all(promises)
     .then((response) => {
       const normalizePosts = response
         .filter(({ status }) => status === 'success')
-        .flatMap(({ rss }) => normalizeRss(rss).normalizePosts);
+        .flatMap(({ rss, feedId }) => normalizeRss(rss).normalizePosts.map((el) => ({ ...el, feedId })));
 
       const newPosts = _.differenceBy(normalizePosts, state.posts, 'title');
       state.posts = [...newPosts, ...state.posts];
@@ -76,7 +77,7 @@ function subscribe(state) {
       }, pullingDelay);
     })
     .catch((error) => {
-      throw new Error(error);
+      console.error(error)
     });
 }
 
@@ -106,7 +107,6 @@ export default () => {
       feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
       postModal: {
         modal: document.getElementById('modal'),
-        modalInstance: new Modal(document.getElementById('modal')),
       },
     };
 
@@ -118,8 +118,6 @@ export default () => {
 
       feeds: [],
       posts: [],
-
-      subscribedUrls: [],
 
       form: {
         processState: 'filling',
@@ -155,7 +153,8 @@ export default () => {
       event.preventDefault();
       watchedState.form.fields.url = new FormData(event.target).get('url');
 
-      const validationError = isValidURL(watchedState.form.fields.url, watchedState.subscribedUrls);
+      const validationError = isValidURL(watchedState.form.fields.url,
+        watchedState.feeds.map(({ urlFeed }) => urlFeed));
 
       if (validationError) {
         watchedState.form.errors = null;
