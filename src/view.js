@@ -48,19 +48,13 @@ export default (elements, i18next, state) => {
           ${feedsItems}
       </ul>`;
   };
-  const renderRssLoading = () => {
+  const handleRssProccesStateChange = () => {
     switch (state.rssLoading.processState) {
       case 'loading':
         elements.submitBtn.setAttribute('disabled', true);
         elements.formInput.setAttribute('readonly', true);
         break;
-      case 'networkFiled':
-        elements.feedbackMessageBlock.classList.add('text-danger');
-        break;
-      case 'invalidRssFeed':
-        elements.feedbackMessageBlock.classList.add('text-danger');
-        break;
-      case 'filed':
+      case 'error':
         elements.feedbackMessageBlock.classList.add('text-danger');
         break;
       case 'successLoad':
@@ -77,7 +71,7 @@ export default (elements, i18next, state) => {
         throw Error(`Unknown form processState: ${state.rssLoading.processState}`);
     }
   };
-  const renderRssLoadingError = () => {
+  const handleRssErrorProccesStateChange = () => {
     switch (state.rssLoading.errors) {
       case 'network-error':
         elements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
@@ -95,7 +89,7 @@ export default (elements, i18next, state) => {
         throw Error(`Unknown form processState: ${state.rssLoading.error}`);
     }
   };
-  const renderFormValidation = () => {
+  const handleFormProccesStateChange = () => {
     elements.formInput.classList.remove('is-invalid');
     elements.feedbackMessageBlock.classList.remove('text-success', 'text-danger');
 
@@ -123,9 +117,9 @@ export default (elements, i18next, state) => {
   };
 
   const mapping = {
-    'form.processState': () => renderFormValidation(),
-    'rssLoading.processState': () => renderRssLoading(),
-    'rssLoading.errors': () => renderRssLoadingError(),
+    'form.processState': () => handleFormProccesStateChange(),
+    'rssLoading.processState': () => handleRssProccesStateChange(),
+    'rssLoading.errors': () => handleRssErrorProccesStateChange(),
     feeds: () => renderRssFeeds(),
     posts: () => renderRssPosts(),
     'ui.watchedPosts': () => renderRssPosts(),

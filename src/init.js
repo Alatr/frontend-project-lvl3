@@ -19,39 +19,36 @@ const normalizeRss = ({ title, description, posts }, urlFeed) => {
   return { normalizeFeed, normalizePosts };
 };
 
+function getTypeError(error) {
+  if (!!error.isAxiosError && !error.response) return 'network-error';
+  if (error.message === 'invalidRSS') return 'invalidRssError';
+  if (error.message === 'invalidRSS') return 'invalidRssError';
+  return 'unknown-error';
+}
+
 const addRss = (state) => {
   state.rssLoading.processState = 'loading';
+  state.rssLoading.errors = null;
 
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
-      const xmldom = parseRss(response.data.contents);
-      const { normalizeFeed: feed, normalizePosts: posts } = normalizeRss(xmldom, state.form.fields.url);
+      const parsedRss = parseRss(response.data.contents);
+      const {
+        normalizeFeed: feed,
+        normalizePosts: posts,
+      } = normalizeRss(parsedRss, state.form.fields.url);
 
       state.feeds = [...state.feeds, feed];
       state.posts = [...posts, ...state.posts];
 
-      state.rssLoading.errors = null;
       state.rssLoading.processState = 'successLoad';
       state.rssLoading.processState = 'idle';
     })
 
     .catch((error) => {
-      if (!!error.isAxiosError && !error.response) {
-        state.rssLoading.errors = 'network-error';
-        state.rssLoading.processState = 'idle';
-        state.rssLoading.processState = 'networkFiled';
-        return;
-      }
-      if (error.message === 'invalidRSS') {
-        state.rssLoading.errors = 'invalidRssError';
-        state.rssLoading.processState = 'idle';
-        state.rssLoading.processState = 'invalidRssFeed';
-        return;
-      }
-      console.error(error);
-      state.rssLoading.errors = 'unknown-error';
+      state.rssLoading.errors = getTypeError(error);
       state.rssLoading.processState = 'idle';
-      state.rssLoading.processState = 'filed';
+      state.rssLoading.processState = 'error';
     });
 };
 
@@ -66,7 +63,9 @@ function subscribe(state) {
     .then((response) => {
       const normalizePosts = response
         .filter(({ status }) => status === 'success')
-        .flatMap(({ rss, feedId }) => normalizeRss(rss).normalizePosts.map((el) => ({ ...el, feedId })));
+        .flatMap(({ rss, feedId }) => (
+          normalizeRss(rss).normalizePosts.map((el) => ({ ...el, feedId }))
+        ));
 
       const newPosts = _.differenceBy(normalizePosts, state.posts, 'title');
       state.posts = [...newPosts, ...state.posts];
@@ -77,7 +76,7 @@ function subscribe(state) {
       }, pullingDelay);
     })
     .catch((error) => {
-      console.error(error)
+      console.error(error);
     });
 }
 
@@ -153,13 +152,11 @@ export default () => {
       event.preventDefault();
       watchedState.form.fields.url = new FormData(event.target).get('url');
 
-      const validationError = isValidURL(watchedState.form.fields.url,
-        watchedState.feeds.map(({ urlFeed }) => urlFeed));
-
+      const validationError = (
+        isValidURL(watchedState.form.fields.url, watchedState.feeds.map(({ urlFeed }) => urlFeed))
+      );
       if (validationError) {
-        watchedState.form.errors = null;
-
-        watchedState.form.fields.url = null;
+        watchedState.form.processState = 'filling';
         watchedState.form.valid = false;
         watchedState.form.errors = validationError;
         watchedState.form.processState = 'error';
@@ -176,8 +173,10 @@ export default () => {
     elements.postsList.addEventListener('click', (event) => {
       event.preventDefault();
 
-      if (event.target.closest('[data-bs-toggle="modal"]') !== null) {
-        const id = +event.target.dataset.id;
+      const button = event.target.closest('[data-bs-toggle="modal"]');
+
+      if (button !== null) {
+        const id = +button.dataset.id;
         watchedState.modal.activePost = id;
 
         watchedState.ui.watchedPosts.add(id);
