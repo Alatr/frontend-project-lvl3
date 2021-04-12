@@ -26,19 +26,15 @@ const dataRss1 = {
     'Рациональные числа / Ruby: Составные данные',
     'Реализация пар / Ruby: Составные данные',
   ],
-  feed: [
-    'Новые уроки на Хекслете',
-    'Практические уроки по программированию',
-  ],
+  feedTitle: 'Новые уроки на Хекслете',
+  feedDescription: 'Практические уроки по программированию'
 };
 const dataRss2 = {
   posts: [
     'Lorem ipsum 2021',
   ],
-  feed: [
-    'Lorem ipsum feed for an interval of 1 years with 1 item',
-    'This is a constantly updating lorem ipsum feed',
-  ],
+  feedTitle: 'Lorem ipsum feed for an interval of 1 years with 1 item',
+  feedDescription: 'This is a constantly updating lorem ipsum feed'
 };
 
 const proxySetting = {
@@ -104,7 +100,7 @@ describe('app', () => {
 
     await screen.findByText(/RSS успешно загружен/i);
 
-    [...titleRss, ...dataRss1.posts, ...dataRss1.feed].forEach((pattern) => {
+    [...titleRss, ...dataRss1.posts, dataRss1.feedTitle, dataRss1.feedDescription].forEach((pattern) => {
       expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
     });
     scope.done();
@@ -152,9 +148,11 @@ describe('app', () => {
       [
         ...titleRss,
         ...dataRss1.posts,
-        ...dataRss1.feed,
+        dataRss1.feedTitle,
+        dataRss1.feedDescription,
         ...dataRss2.posts,
-        ...dataRss2.feed,
+        dataRss2.feedTitle,
+        dataRss2.feedDescription,
       ].forEach((pattern) => {
         expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
       });

@@ -3,21 +3,21 @@ import onChange from 'on-change';
 export default (elements, i18next, state) => {
   elements.formInput.focus();
 
-  const renderModalPosts = () => {
+  const handleModalStateChange = () => {
     if (state.modal.activePost === null) {
-      elements.postModal.modal.querySelector('[data-modal-title]').innerHTML = '';
-      elements.postModal.modal.querySelector('[data-modal-description]').innerHTML = '';
-      elements.postModal.modal.querySelector('[data-modal-link]').setAttribute('href', '#');
+      elements.postModal.querySelector('[data-modal-title]').innerHTML = '';
+      elements.postModal.querySelector('[data-modal-description]').innerHTML = '';
+      elements.postModal.querySelector('[data-modal-link]').setAttribute('href', '#');
       return;
     }
     const { title, description, link } = state.posts
       .find(({ postId }) => +state.modal.activePost === +postId);
 
-    elements.postModal.modal.querySelector('[data-modal-title]').innerHTML = title;
-    elements.postModal.modal.querySelector('[data-modal-description]').innerHTML = description;
-    elements.postModal.modal.querySelector('[data-modal-link]').setAttribute('href', link);
+    elements.postModal.querySelector('[data-modal-title]').innerHTML = title;
+    elements.postModal.querySelector('[data-modal-description]').innerHTML = description;
+    elements.postModal.querySelector('[data-modal-link]').setAttribute('href', link);
   };
-  const renderRssPosts = () => {
+  const handlePostsStateChange = () => {
     if (state.posts.length === 0) return;
     const list = elements.postsList;
     const postItems = state.posts
@@ -35,7 +35,7 @@ export default (elements, i18next, state) => {
         ${postItems}
       </ul>`;
   };
-  const renderRssFeeds = () => {
+  const handleFeedsStateChange = () => {
     const list = elements.feedsList;
     const feedsItems = state.feeds
       .map(({ title, description }) => `<li class="list-group-item"><h3>${title}</h3><p>${description}</p></li>`)
@@ -49,41 +49,41 @@ export default (elements, i18next, state) => {
       </ul>`;
   };
   const handleRssProccesStateChange = () => {
-    switch (state.rssLoading.processState) {
+    switch (state.rssLoading.status) {
       case 'loading':
-        elements.submitBtn.setAttribute('disabled', true);
+        elements.submit.setAttribute('disabled', true);
         elements.formInput.setAttribute('readonly', true);
         break;
       case 'error':
-        elements.feedbackMessageBlock.classList.add('text-danger');
+        elements.feedback.classList.add('text-danger');
         break;
       case 'successLoad':
         elements.formInput.value = '';
         elements.formInput.focus();
-        elements.feedbackMessageBlock.classList.add('text-success');
-        elements.feedbackMessageBlock.textContent = i18next.t('successLoadValidation');
+        elements.feedback.classList.add('text-success');
+        elements.feedback.textContent = i18next.t('successLoadValidation');
         break;
       case 'idle':
-        elements.submitBtn.removeAttribute('disabled');
+        elements.submit.removeAttribute('disabled');
         elements.formInput.removeAttribute('readonly');
         break;
       default:
-        throw Error(`Unknown form processState: ${state.rssLoading.processState}`);
+        throw Error(`Unknown form processState: ${state.rssLoading.status}`);
     }
   };
   const handleRssErrorProccesStateChange = () => {
     switch (state.rssLoading.errors) {
       case 'network-error':
-        elements.feedbackMessageBlock.textContent = i18next.t('errorMessages.network');
+        elements.feedback.textContent = i18next.t('errorMessages.network');
         break;
       case 'invalidRssError':
-        elements.feedbackMessageBlock.textContent = i18next.t('errorMessages.invalidRss');
+        elements.feedback.textContent = i18next.t('errorMessages.invalidRss');
         break;
       case 'unknown-error':
-        elements.feedbackMessageBlock.textContent = i18next.t('errorMessages.unknownError');
+        elements.feedback.textContent = i18next.t('errorMessages.unknownError');
         break;
       case null:
-        elements.feedbackMessageBlock.classList.remove('text-danger');
+        elements.feedback.classList.remove('text-danger');
         break;
       default:
         throw Error(`Unknown form processState: ${state.rssLoading.error}`);
@@ -91,23 +91,23 @@ export default (elements, i18next, state) => {
   };
   const handleFormProccesStateChange = () => {
     elements.formInput.classList.remove('is-invalid');
-    elements.feedbackMessageBlock.classList.remove('text-success', 'text-danger');
+    elements.feedback.classList.remove('text-success', 'text-danger');
 
     switch (state.form.processState) {
       case 'error':
-        elements.feedbackMessageBlock.classList.add('text-danger');
-        elements.feedbackMessageBlock.textContent = state.form.errors;
+        elements.feedback.classList.add('text-danger');
+        elements.feedback.textContent = state.form.error;
         elements.formInput.classList.add('is-invalid');
         break;
       case 'validUrl':
-        elements.feedbackMessageBlock.textContent = state.form.errors ?? '';
+        elements.feedback.textContent = state.form.error ?? '';
         break;
       case 'filling':
-        elements.submitBtn.removeAttribute('disabled');
+        elements.submit.removeAttribute('disabled');
         elements.formInput.removeAttribute('readonly');
         break;
       case 'success':
-        elements.submitBtn.removeAttribute('disabled');
+        elements.submit.removeAttribute('disabled');
         elements.formInput.removeAttribute('readonly');
         break;
 
@@ -118,12 +118,12 @@ export default (elements, i18next, state) => {
 
   const mapping = {
     'form.processState': () => handleFormProccesStateChange(),
-    'rssLoading.processState': () => handleRssProccesStateChange(),
+    'rssLoading.status': () => handleRssProccesStateChange(),
     'rssLoading.errors': () => handleRssErrorProccesStateChange(),
-    feeds: () => renderRssFeeds(),
-    posts: () => renderRssPosts(),
-    'ui.watchedPosts': () => renderRssPosts(),
-    'modal.activePost': () => renderModalPosts(),
+    feeds: () => handleFeedsStateChange(),
+    posts: () => handlePostsStateChange(),
+    'ui.watchedPosts': () => handlePostsStateChange(),
+    'modal.activePost': () => handleModalStateChange(),
   };
 
   const watchedState = onChange(state, (path) => {

@@ -9,7 +9,7 @@ import parseRss from './rssParser.js';
 
 const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-const normalizeRss = ({ title, description, posts }, urlFeed) => {
+const normalizeRss = ({ title, description, items: posts }, urlFeed) => {
   const feedId = _.uniqueId();
   const normalizeFeed = {
     title, description, feedId, urlFeed,
@@ -20,14 +20,13 @@ const normalizeRss = ({ title, description, posts }, urlFeed) => {
 };
 
 function getTypeError(error) {
-  if (!!error.isAxiosError && !error.response) return 'network-error';
-  if (error.message === 'invalidRSS') return 'invalidRssError';
+  if (error.isAxiosError ) return 'network-error';
   if (error.message === 'invalidRSS') return 'invalidRssError';
   return 'unknown-error';
 }
 
 const addRss = (state) => {
-  state.rssLoading.processState = 'loading';
+  state.rssLoading.status = 'loading';
   state.rssLoading.errors = null;
 
   axios.get(addProxy(state.form.fields.url))
@@ -41,14 +40,14 @@ const addRss = (state) => {
       state.feeds = [...state.feeds, feed];
       state.posts = [...posts, ...state.posts];
 
-      state.rssLoading.processState = 'successLoad';
-      state.rssLoading.processState = 'idle';
+      state.rssLoading.status = 'successLoad';
+      state.rssLoading.status = 'idle';
     })
 
     .catch((error) => {
       state.rssLoading.errors = getTypeError(error);
-      state.rssLoading.processState = 'idle';
-      state.rssLoading.processState = 'error';
+      state.rssLoading.status = 'idle';
+      state.rssLoading.status = 'error';
     });
 };
 
@@ -64,7 +63,7 @@ function subscribe(state) {
       const normalizePosts = response
         .filter(({ status }) => status === 'success')
         .flatMap(({ rss, feedId }) => (
-          normalizeRss(rss).normalizePosts.map((el) => ({ ...el, feedId }))
+          rss.items.map((post) => ({ ...post, postId: _.uniqueId(), feedId }))
         ));
 
       const newPosts = _.differenceBy(normalizePosts, state.posts, 'title');
@@ -81,6 +80,40 @@ function subscribe(state) {
 }
 
 export default () => {
+  const elements = {
+    form: document.querySelector('[data-rss-form]'),
+    formInput: document.querySelector('[data-rss-form] [data-rss-input]'),
+    submit: document.querySelector('[data-rss-form] [data-submit-button]'),
+    feedsList: document.querySelector('[data-feeds-list]'),
+    postsList: document.querySelector('[data-posts-list]'),
+    feedback: document.querySelector('[data-feedback-block]'),
+    postModal: document.getElementById('modal'),
+  };
+
+  const state = {
+    rssLoading: {
+      processState: 'idle',
+      error: null,
+    },
+
+    feeds: [],
+    posts: [],
+
+    form: {
+      processState: 'filling',
+      fields: {
+        url: null,
+      },
+      valid: true,
+      error: null,
+    },
+    modal: {
+      activePost: null,
+    },
+    ui: {
+      watchedPosts: new Set(),
+    },
+  };
   const i18nextInstance = i18next.createInstance();
 
   i18nextInstance.init({
@@ -96,44 +129,6 @@ export default () => {
       },
     });
 
-    const elements = {
-      form: document.querySelector('[data-rss-form]'),
-      formInput: document.querySelector('[data-rss-form] [data-rss-input]'),
-      submitBtn: document.querySelector('[data-rss-form] [data-submit-button]'),
-      formSubmitButton: document.querySelector('[data-rss-form] [data-rss-input]'),
-      feedsList: document.querySelector('[data-feeds-list]'),
-      postsList: document.querySelector('[data-posts-list]'),
-      feedbackMessageBlock: document.querySelector('[data-feedback-block]'),
-      postModal: {
-        modal: document.getElementById('modal'),
-      },
-    };
-
-    const state = {
-      rssLoading: {
-        processState: 'idle',
-        error: null,
-      },
-
-      feeds: [],
-      posts: [],
-
-      form: {
-        processState: 'filling',
-        processError: null,
-        fields: {
-          url: null,
-        },
-        valid: true,
-        errors: null,
-      },
-      modal: {
-        activePost: null,
-      },
-      ui: {
-        watchedPosts: new Set(),
-      },
-    };
     const watchedState = initView(elements, i18nextInstance, state);
 
     subscribe(watchedState);
@@ -158,13 +153,13 @@ export default () => {
       if (validationError) {
         watchedState.form.processState = 'filling';
         watchedState.form.valid = false;
-        watchedState.form.errors = validationError;
+        watchedState.form.error = validationError;
         watchedState.form.processState = 'error';
         return;
       }
 
       watchedState.form.valid = true;
-      watchedState.form.errors = validationError;
+      watchedState.form.error = validationError;
       watchedState.form.processState = 'validUrl';
 
       addRss(watchedState);
@@ -183,7 +178,7 @@ export default () => {
       }
     });
 
-    elements.postModal.modal.addEventListener('hide.bs.modal', () => {
+    elements.postModal.addEventListener('hide.bs.modal', () => {
       watchedState.modal.activePost = null;
     });
   });
