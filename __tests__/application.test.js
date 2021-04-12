@@ -27,14 +27,14 @@ const dataRss1 = {
     'Реализация пар / Ruby: Составные данные',
   ],
   feedTitle: 'Новые уроки на Хекслете',
-  feedDescription: 'Практические уроки по программированию'
+  feedDescription: 'Практические уроки по программированию',
 };
 const dataRss2 = {
   posts: [
     'Lorem ipsum 2021',
   ],
   feedTitle: 'Lorem ipsum feed for an interval of 1 years with 1 item',
-  feedDescription: 'This is a constantly updating lorem ipsum feed'
+  feedDescription: 'This is a constantly updating lorem ipsum feed',
 };
 
 const proxySetting = {
@@ -100,7 +100,10 @@ describe('app', () => {
 
     await screen.findByText(/RSS успешно загружен/i);
 
-    [...titleRss, ...dataRss1.posts, dataRss1.feedTitle, dataRss1.feedDescription].forEach((pattern) => {
+    [...titleRss,
+      ...dataRss1.posts,
+      dataRss1.feedTitle,
+      dataRss1.feedDescription].forEach((pattern) => {
       expect(screen.getByText(new RegExp(pattern, 'i'))).toBeInTheDocument();
     });
     scope.done();

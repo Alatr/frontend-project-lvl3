@@ -20,7 +20,7 @@ const normalizeRss = ({ title, description, items: posts }, urlFeed) => {
 };
 
 function getTypeError(error) {
-  if (error.isAxiosError ) return 'network-error';
+  if (error.isAxiosError) return 'network-error';
   if (error.message === 'invalidRSS') return 'invalidRssError';
   return 'unknown-error';
 }
