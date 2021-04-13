@@ -9,33 +9,26 @@ import parseRss from './rssParser.js';
 
 const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCache=true&url=${encodeURIComponent(url)}`;
 
-const normalizeRss = ({ title, description, items: posts }, urlFeed) => {
-  const feedId = _.uniqueId();
-  const normalizeFeed = {
-    title, description, feedId, urlFeed,
-  };
-  const normalizePosts = posts.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
-
-  return { normalizeFeed, normalizePosts };
-};
-
 function getTypeError(error) {
   if (error.isAxiosError) return 'network-error';
-  if (error.message === 'invalidRSS') return 'invalidRssError';
+  if (error.message === 'invalidRSS') return 'invalid-error';
+  console.error(error);
   return 'unknown-error';
 }
 
 const addRss = (state) => {
   state.rssLoading.status = 'loading';
-  state.rssLoading.errors = null;
+  state.rssLoading.error = null;
 
   axios.get(addProxy(state.form.fields.url))
     .then((response) => {
-      const parsedRss = parseRss(response.data.contents);
-      const {
-        normalizeFeed: feed,
-        normalizePosts: posts,
-      } = normalizeRss(parsedRss, state.form.fields.url);
+      const { title, description, items } = parseRss(response.data.contents);
+      const feedId = _.uniqueId();
+
+      const feed = {
+        title, description, feedId, urlFeed: state.form.fields.url,
+      };
+      const posts = items.map((post) => ({ ...post, postId: _.uniqueId(), feedId }));
 
       state.feeds = [...state.feeds, feed];
       state.posts = [...posts, ...state.posts];
@@ -45,7 +38,7 @@ const addRss = (state) => {
     })
 
     .catch((error) => {
-      state.rssLoading.errors = getTypeError(error);
+      state.rssLoading.error = getTypeError(error);
       state.rssLoading.status = 'idle';
       state.rssLoading.status = 'error';
     });
@@ -53,25 +46,25 @@ const addRss = (state) => {
 
 const pullingDelay = 5000;
 
-function subscribe(state) {
+function fetchNewPosts(state) {
   const promises = state.feeds.map(({ urlFeed, feedId }) => axios.get(addProxy(urlFeed))
     .then((response) => ({ feedId, status: 'success', rss: parseRss(response.data.contents) }))
     .catch((error) => ({ status: 'error', error })));
 
   return Promise.all(promises)
     .then((response) => {
-      const normalizePosts = response
+      const posts = response
         .filter(({ status }) => status === 'success')
         .flatMap(({ rss, feedId }) => (
           rss.items.map((post) => ({ ...post, postId: _.uniqueId(), feedId }))
         ));
 
-      const newPosts = _.differenceBy(normalizePosts, state.posts, 'title');
+      const newPosts = _.differenceBy(posts, state.posts, 'title');
       state.posts = [...newPosts, ...state.posts];
     })
     .then(() => {
       setTimeout(() => {
-        subscribe(state);
+        fetchNewPosts(state);
       }, pullingDelay);
     })
     .catch((error) => {
@@ -131,7 +124,7 @@ export default () => {
 
     const watchedState = initView(elements, i18nextInstance, state);
 
-    subscribe(watchedState);
+    fetchNewPosts(watchedState);
 
     function isValidURL(url, subscribedUrls) {
       const schema = yup.string().url().notOneOf(subscribedUrls);

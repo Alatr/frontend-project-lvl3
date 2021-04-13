@@ -72,11 +72,11 @@ export default (elements, i18next, state) => {
     }
   };
   const handleRssErrorProccesStateChange = () => {
-    switch (state.rssLoading.errors) {
+    switch (state.rssLoading.error) {
       case 'network-error':
         elements.feedback.textContent = i18next.t('errorMessages.network');
         break;
-      case 'invalidRssError':
+      case 'invalid-error':
         elements.feedback.textContent = i18next.t('errorMessages.invalidRss');
         break;
       case 'unknown-error':
@@ -119,7 +119,7 @@ export default (elements, i18next, state) => {
   const mapping = {
     'form.processState': () => handleFormProccesStateChange(),
     'rssLoading.status': () => handleRssProccesStateChange(),
-    'rssLoading.errors': () => handleRssErrorProccesStateChange(),
+    'rssLoading.error': () => handleRssErrorProccesStateChange(),
     feeds: () => handleFeedsStateChange(),
     posts: () => handlePostsStateChange(),
     'ui.watchedPosts': () => handlePostsStateChange(),
