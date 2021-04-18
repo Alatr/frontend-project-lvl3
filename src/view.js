@@ -117,20 +117,17 @@ export default (elements, i18next, state) => {
   };
 
   const mapping = {
-    'form.processState': () => handleFormProccesStateChange(),
-    'rssLoading.status': () => handleRssProccesStateChange(),
-    'rssLoading.error': () => handleRssErrorProccesStateChange(),
-    feeds: () => handleFeedsStateChange(),
-    posts: () => handlePostsStateChange(),
-    'ui.watchedPosts': () => handlePostsStateChange(),
-    'modal.activePost': () => handleModalStateChange(),
+    'form.processState': handleFormProccesStateChange,
+    'rssLoading.status': handleRssProccesStateChange,
+    'rssLoading.error': handleRssErrorProccesStateChange,
+    feeds: handleFeedsStateChange,
+    posts: handlePostsStateChange,
+    'ui.watchedPosts': handlePostsStateChange,
+    'modal.activePost': handleModalStateChange,
   };
 
   const watchedState = onChange(state, (path) => {
-    // console.log('--------', path, value);
-    if (mapping[path]) {
-      mapping[path]();
-    }
+    mapping[path]?.();
   });
 
   return watchedState;

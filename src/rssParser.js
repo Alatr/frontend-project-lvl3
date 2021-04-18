@@ -5,7 +5,9 @@ export default (xml) => {
   const rssDOM = new DOMParser().parseFromString(xml, 'application/xml');
 
   if (rssDOM.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
-    throw new Error('invalidRSS');
+    const parsingError = new Error('parsing-error');
+    parsingError.isParsingError = true;
+    throw parsingError;
   }
 
   const items = [...rssDOM.querySelectorAll('channel > item')].map((item) => ({

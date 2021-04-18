@@ -11,7 +11,7 @@ const addProxy = (url) => `https://hexlet-allorigins.herokuapp.com/get?disableCa
 
 function getTypeError(error) {
   if (error.isAxiosError) return 'network-error';
-  if (error.message === 'invalidRSS') return 'invalid-error';
+  if (error.isParsingError) return 'invalid-error';
   console.error(error);
   return 'unknown-error';
 }
@@ -109,7 +109,7 @@ export default () => {
   };
   const i18nextInstance = i18next.createInstance();
 
-  i18nextInstance.init({
+  return i18nextInstance.init({
     lng: 'ru',
     resources,
   }, () => {
